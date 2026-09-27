@@ -1,0 +1,13 @@
+[
+  { "id": "CORE-SIM", "priority": "P0", "authority": "LOCKED", "description": "TypeScript fixed-step authoritative simulation separated from Phaser rendering", "status": "AutoVerified", "evidence": ["tests/resonance.test.ts A05/A15"], "blocker": null },
+  { "id": "CORE-NEEDLES", "priority": "P0", "authority": "LOCKED", "description": "Exactly three resonance needles A/B/C with Held/Flying/Embedded/Disabled/Returning states and swept collision", "status": "AutoVerified", "evidence": ["A01", "A05"], "blocker": null },
+  { "id": "CORE-RESONANCE-LINK", "priority": "P0", "authority": "LOCKED", "description": "Links between embedded needles (distance, LOS, lifecycle) and signature capture from real attack geometry", "status": "AutoVerified", "evidence": ["A02", "A03", "A04", "A06"], "blocker": null },
+  { "id": "CORE-PULSE", "priority": "P0", "authority": "LOCKED", "description": "Directional Pulse: aimed needle receives the energy of its charged links", "status": "AutoVerified", "evidence": ["A08"], "blocker": null },
+  { "id": "CORE-LATTICE", "priority": "P0", "authority": "LOCKED", "description": "Three-link lattice detection (used by B01 pin)", "status": "AutoVerified", "evidence": ["tests/bosses.test.ts B01"], "blocker": null },
+  { "id": "CORE-SHIELD", "priority": "P0", "authority": "LOCKED", "description": "Shield 2 -> 1 -> Core -> Dead, lethal attacks, recovery once per fight", "status": "AutoVerified", "evidence": ["A10", "A11"], "blocker": null },
+  { "id": "CORE-TIE", "priority": "P0", "authority": "LOCKED", "description": "Same-tick Convergence vs lethal hit resolves to player death", "status": "AutoVerified", "evidence": ["A12"], "blocker": null },
+  { "id": "CORE-THREADSTEP", "priority": "P1", "authority": "TUNABLE", "description": "Dash across own link extends dash and stabilises the link", "status": "Implemented", "evidence": [], "blocker": null },
+  { "id": "BOSS-B01", "priority": "P0", "authority": "LOCKED", "description": "B01 벽쇄자 그람: charge capture, directional seal faces, core pin lattice convergence", "status": "RuntimeVerified", "evidence": ["tests/bosses.test.ts", "e2e/smoke.spec.ts"], "blocker": null },
+  { "id": "WORLD-HUB", "priority": "P1", "authority": "LOCKED", "description": "Central chamber with tutorial device, 4 gates, heart door, altar, records", "status": "RuntimeVerified", "evidence": ["e2e/smoke.spec.ts"], "blocker": null },
+  { "id": "ART-PIPELINE", "priority": "P1", "authority": "LOCKED", "description": "Palette-indexed pixel sources -> exported PNG sheets + manifest", "status": "Implemented", "evidence": ["npm run art"], "blocker": null }
+]

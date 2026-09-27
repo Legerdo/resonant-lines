@@ -1,0 +1,42 @@
+import type { AreaDef } from '../areaTypes.ts';
+
+// B01 벽쇄자 그람 — quarry pit. Four anchor slabs (N/S/W/E) + three seal monoliths with carved faces.
+export const ARENA_B01: AreaDef = {
+  id: 'arena_B01',
+  kind: 'arena',
+  region: 'quarry',
+  nameKey: 'boss.B01',
+  bossId: 'B01',
+  music: 'boss_gram',
+  tiles: [
+    '##########################',
+    '##########AAAAAA##########',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '##########AAAAAA##########',
+    '##########################',
+  ],
+  spawns: { default: { x: 208, y: 228 } },
+  props: [
+    { id: 'sealN', kind: 'sealStone', pos: { x: 208, y: 62 }, r: 8, tag: 'Anchorable', receiver: 'sealN', variant: 0 },
+    { id: 'sealW', kind: 'sealStone', pos: { x: 96, y: 186 }, r: 8, tag: 'Anchorable', receiver: 'sealW', variant: 1 },
+    { id: 'sealE', kind: 'sealStone', pos: { x: 320, y: 186 }, r: 8, tag: 'Anchorable', receiver: 'sealE', variant: 2 },
+    { id: 'rub1', kind: 'rubble', pos: { x: 40, y: 50 }, variant: 0 },
+    { id: 'rub2', kind: 'rubble', pos: { x: 380, y: 238 }, variant: 1 },
+    { id: 'rub3', kind: 'rubble', pos: { x: 372, y: 52 }, variant: 1 },
+  ],
+  exits: [],
+  interactables: [],
+};

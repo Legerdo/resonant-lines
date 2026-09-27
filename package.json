@@ -1,0 +1,27 @@
+{
+  "name": "resonant-lines",
+  "version": "1.0.0",
+  "private": true,
+  "description": "공명선: 봉인된 심장 — TypeScript 웹 2D 픽셀아트 보스 퍼즐 액션",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "art": "node scripts/export-art.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "build": "vite build",
+    "preview": "vite preview --port 4173 --strictPort",
+    "verify": "npm run art && npm run typecheck && npm run test && npm run build && npm run test:e2e"
+  },
+  "dependencies": {
+    "phaser": "4.2.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.0",
+    "typescript": "7.0.2",
+    "vite": "8.3.1",
+    "vitest": "5.0.2"
+  }
+}
