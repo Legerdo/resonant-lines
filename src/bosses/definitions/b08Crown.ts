@@ -13,6 +13,7 @@ import { pointInTriangle } from '../../core/geometry/geom.ts';
 import type { Attack, Body, DeliveryInfo, Link, PulseResult } from '../../core/sim/types.ts';
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
+import { datan2, dcos, dexp, dsin } from '../../core/math/dmath.ts';
 
 export type Answer = 'cut' | 'press' | 'eject' | 'shards' | 'ring';
 type State = 'hover' | 'tell' | 'act' | 'recover' | 'return';
@@ -70,7 +71,7 @@ export class CrownBoss implements BossController {
   }
 
   private observe(sim: Sim): void {
-    const k = Math.exp(-DT / CROWN.tau);
+    const k = dexp(-DT / CROWN.tau);
     const long = sim.links.some((l) => l.valid && l.length > CROWN.longLen);
     const tri = sim.lattice.formed && sim.lattice.area < CROWN.smallArea;
     // dependence = a needle riding the prongs for a while (a quick gem needle is not "reliance")
@@ -107,7 +108,7 @@ export class CrownBoss implements BossController {
     switch (this.state) {
       case 'hover': {
         const c = CROWN.home;
-        b.pos = { x: c.x + Math.sin(this.age * 0.6) * 26, y: c.y + Math.sin(this.age * 0.9) * 8 + (this.coreExposed ? 26 : 0) };
+        b.pos = { x: c.x + dsin(this.age * 0.6) * 26, y: c.y + dsin(this.age * 0.9) * 8 + (this.coreExposed ? 26 : 0) };
         this.decideT -= DT;
         if (this.decideT <= 0) {
           this.answer = this.chooseAnswer();
@@ -130,8 +131,8 @@ export class CrownBoss implements BossController {
         if (this.answer === 'cut' && this.attack) {
           const a = this.attack;
           const ang = a.p.ang! + (a.t / CROWN.sweep) * Math.PI * 2;
-          const inner = add(b.pos, { x: Math.cos(ang) * 16, y: Math.sin(ang) * 16 });
-          const outer = add(b.pos, { x: Math.cos(ang) * 230, y: Math.sin(ang) * 230 });
+          const inner = add(b.pos, { x: dcos(ang) * 16, y: dsin(ang) * 16 });
+          const outer = add(b.pos, { x: dcos(ang) * 230, y: dsin(ang) * 230 });
           a.shape = { kind: 'capsule', a: inner, b: outer, r: 3 };
           if (a.t >= CROWN.sweep) {
             a.phase = 'done';
@@ -163,8 +164,8 @@ export class CrownBoss implements BossController {
         } else {
           const d = norm(sub(sim.player.pos, b.pos));
           for (let k = -2; k <= 2; k++) {
-            const a = Math.atan2(d.y, d.x) + k * 0.2;
-            sim.spawnAttack({ kind: 'projectile', owner: 'crown', harmful: true, p: { x: b.pos.x, y: b.pos.y, vx: Math.cos(a) * 150, vy: Math.sin(a) * 150, r: 3, range: 300 } });
+            const a = datan2(d.y, d.x) + k * 0.2;
+            sim.spawnAttack({ kind: 'projectile', owner: 'crown', harmful: true, p: { x: b.pos.x, y: b.pos.y, vx: dcos(a) * 150, vy: dsin(a) * 150, r: 3, range: 300 } });
           }
           this.go(sim, 'recover');
         }
@@ -178,7 +179,7 @@ export class CrownBoss implements BossController {
         break;
       case 'return': {
         const c = CROWN.home;
-        const tgt = { x: c.x + Math.sin(this.age * 0.6) * 26, y: c.y + Math.sin(this.age * 0.9) * 8 + (this.coreExposed ? 26 : 0) };
+        const tgt = { x: c.x + dsin(this.age * 0.6) * 26, y: c.y + dsin(this.age * 0.9) * 8 + (this.coreExposed ? 26 : 0) };
         b.pos = lerp(this.from, tgt, Math.min(1, this.t / 0.8));
         if (this.t >= 0.8) {
           this.decideT = CROWN.decide - 2.4;
@@ -197,7 +198,7 @@ export class CrownBoss implements BossController {
       const longest = [...sim.links].filter((l) => l.valid).sort((x, y) => y.length - x.length)[0];
       const tgt = longest ? lerp(sim.needle(longest.a).pos, sim.needle(longest.b).pos, 0.5) : sim.player.pos;
       const d = sub(tgt, this.body.pos);
-      this.attack = sim.spawnAttack({ kind: 'cut', owner: 'crown', sig: 'Void', capturable: true, harmful: true, phase: 'active', p: { ang: Math.atan2(d.y, d.x) } });
+      this.attack = sim.spawnAttack({ kind: 'cut', owner: 'crown', sig: 'Void', capturable: true, harmful: true, phase: 'active', p: { ang: datan2(d.y, d.x) } });
     }
     this.go(sim, 'act');
   }

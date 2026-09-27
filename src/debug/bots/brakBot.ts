@@ -6,6 +6,7 @@ import { Placer, survive, steerTo, shapePos } from './botKit.ts';
 import type { BrakBoss } from '../../bosses/definitions/b06Brak.ts';
 import type { AnyBot } from './index.ts';
 import { isEmbedded } from '../../resonance/needle.ts';
+import { dhypot } from '../../core/math/dmath.ts';
 
 const COLS = ['p:colNW', 'p:colNE', 'p:colSW', 'p:colSE'];
 
@@ -62,7 +63,7 @@ export class BrakBot implements AnyBot {
       }
     } else {
       // pick the two columns nearest the jammed body
-      const cols = COLS.map((id) => ({ id, p: shapePos(sim, id)! })).sort((a, b) => Math.hypot(a.p.x - brak.x, a.p.y - brak.y) - Math.hypot(b.p.x - brak.x, b.p.y - brak.y));
+      const cols = COLS.map((id) => ({ id, p: shapePos(sim, id)! })).sort((a, b) => dhypot(a.p.x - brak.x, a.p.y - brak.y) - dhypot(b.p.x - brak.x, b.p.y - brak.y));
       const okA = this.placer.place(sim, f, 'A', { shape: cols[0]!.id }, [brak]);
       const okB = okA && this.placer.place(sim, f, 'B', { shape: cols[1]!.id }, [brak]);
       const okC = okB && this.placer.place(sim, f, 'C', { shape: 'brak:drill' }, []);

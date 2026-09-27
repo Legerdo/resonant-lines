@@ -1,0 +1,56 @@
+{
+  "steps": {
+    "fired3": [
+      "A:EmbeddedWorld@w4",
+      "B:EmbeddedWorld@w27",
+      "C:EmbeddedWorld@mech:tutorialDoor:socket"
+    ],
+    "fourthThrow": [
+      "A:EmbeddedWorld@w4",
+      "B:EmbeddedWorld@w27",
+      "C:EmbeddedWorld@mech:tutorialDoor:socket"
+    ],
+    "recallA": [
+      "A:Held",
+      "B:EmbeddedWorld@w27",
+      "C:EmbeddedWorld@mech:tutorialDoor:socket"
+    ],
+    "recallB": [
+      "A:Held",
+      "B:Held",
+      "C:EmbeddedWorld@mech:tutorialDoor:socket"
+    ],
+    "refire": [
+      "A:EmbeddedWorld@w4",
+      "B:EmbeddedWorld@w27",
+      "C:EmbeddedWorld@mech:tutorialDoor:socket"
+    ],
+    "refireLinks": [
+      "AB:invalid:Idle",
+      "BC:valid:Idle",
+      "CA:valid:Idle"
+    ],
+    "recallAll": [
+      "A:Held",
+      "B:Held",
+      "C:Held"
+    ],
+    "dead": [
+      "A:EmbeddedWorld@p:sealW",
+      "B:Held",
+      "C:Held"
+    ],
+    "restart": [
+      "A:Held",
+      "B:Held",
+      "C:Held"
+    ],
+    "afterRestartFire3": [
+      "A:EmbeddedWorld@p:sealW",
+      "B:EmbeddedWorld@p:sealE",
+      "C:EmbeddedWorld@w4"
+    ]
+  },
+  "violations": [],
+  "samples": 376
+}

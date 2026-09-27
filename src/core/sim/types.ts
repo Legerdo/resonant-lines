@@ -215,7 +215,7 @@ export type SimEventType =
   | 'pulseFired' | 'pulseDelivered' | 'pulseFizzled' | 'pulsePathHit' | 'pulseEmpty'
   | 'playerHit' | 'playerDied' | 'shieldRestored' | 'dash' | 'threadStep'
   | 'sealBroken' | 'sealRejected' | 'coreExposed' | 'bossPhase' | 'bossVictory' | 'bossStagger'
-  | 'telegraph' | 'attack' | 'shake' | 'sfx' | 'interact' | 'exit' | 'doorOpened' | 'hint' | 'latticeFormed' | 'latticeLost';
+  | 'telegraph' | 'attack' | 'shake' | 'sfx' | 'interact' | 'exit' | 'exitLocked' | 'doorOpened' | 'hint' | 'latticeFormed' | 'latticeLost';
 
 export interface SimEvent {
   type: SimEventType;
@@ -228,6 +228,8 @@ export interface SimEvent {
   value?: number;
   text?: string;
   result?: 'success' | 'fail' | 'none';
+  /** sub-tick collision time in [0, 1] of the step that produced the event (debug overlay F4) */
+  t?: number;
 }
 
 export interface InputFrame {

@@ -4,6 +4,7 @@ import { P, SIG_COLORS } from './art/palette.ts';
 import type { PixelLayer } from './pixelLayer.ts';
 import type { Sim } from '../core/sim/sim.ts';
 import type { Link, Signature } from '../core/sim/types.ts';
+import type { Vec } from '../core/math/vec.ts';
 import { planPulse, flowInvertedFor } from '../resonance/pulse.ts';
 import { isEmbedded } from '../resonance/needle.ts';
 
@@ -196,6 +197,26 @@ export function drawPulsePreview(layer: PixelLayer, sim: Sim, o: LinkDrawOptions
   if (sim.player.dead || sim.pulses.some((q) => !q.done && !q.delivered)) return;
   const plan = planPulse(sim);
   if (!plan) return;
+  const drawFlow = (f: Vec, tt: Vec) => {
+    const dx = tt.x - f.x;
+    const dy = tt.y - f.y;
+    const len = Math.hypot(dx, dy);
+    if (len < 20) return;
+    const ux = dx / len;
+    const uy = dy / len;
+    const phase = (o.time * 30) % 18;
+    for (let d = 10 + phase; d < len - 8; d += 18) {
+      const cx = f.x + ux * d;
+      const cy = f.y + uy * d;
+      layer.px(cx, cy, P.bone);
+      layer.px(cx - ux * 2 - uy * 2, cy - uy * 2 + ux * 2, P.resoLite);
+      layer.px(cx - ux * 2 + uy * 2, cy - uy * 2 - ux * 2, P.resoLite);
+    }
+  };
+  if (plan.automatic) {
+    for (const l of plan.links) drawFlow(sim.needle(l.a).pos, sim.needle(l.b).pos);
+    return;
+  }
   const t = plan.target.pos;
   const blink = Math.floor(o.time * 4) % 2 === 0;
   const r = 6;
@@ -210,20 +231,6 @@ export function drawPulsePreview(layer: PixelLayer, sim: Sim, o: LinkDrawOptions
     const inv = flowInvertedFor(sim, l);
     const f = inv ? plan.target.pos : sim.needle(otherId).pos;
     const tt = inv ? sim.needle(otherId).pos : plan.target.pos;
-    const dx = tt.x - f.x;
-    const dy = tt.y - f.y;
-    const len = Math.hypot(dx, dy);
-    if (len < 20) continue;
-    const ux = dx / len;
-    const uy = dy / len;
-    const phase = (o.time * 30) % 18;
-    for (let d = 10 + phase; d < len - 8; d += 18) {
-      const cx = f.x + ux * d;
-      const cy = f.y + uy * d;
-      // chevron: tip + two wings behind it
-      layer.px(cx, cy, P.bone);
-      layer.px(cx - ux * 2 - uy * 2, cy - uy * 2 + ux * 2, P.resoLite);
-      layer.px(cx - ux * 2 + uy * 2, cy - uy * 2 - ux * 2, P.resoLite);
-    }
+    drawFlow(f, tt);
   }
 }

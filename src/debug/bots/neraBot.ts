@@ -7,6 +7,7 @@ import { Placer, survive, steerTo, lurePoint, shapePos } from './botKit.ts';
 import { pointInTriangle } from '../../core/geometry/geom.ts';
 import type { NeraBoss } from '../../bosses/definitions/b03Nera.ts';
 import type { AnyBot } from './index.ts';
+import { dhypot } from '../../core/math/dmath.ts';
 
 export class NeraBot implements AnyBot {
   name = 'B03';
@@ -36,7 +37,7 @@ export class NeraBot implements AnyBot {
       const okA = this.placer.place(sim, f, 'A', { shape: trueShape }, []);
       // B on the post farthest from the player-side so beams can cross A-B
       const posts = ['p:postW', 'p:postE', 'p:postN', 'p:postS'].map((id) => ({ id, p: shapePos(sim, id)! }));
-      posts.sort((a, b) => Math.hypot(a.p.x - T.pos.x, a.p.y - T.pos.y) - Math.hypot(b.p.x - T.pos.x, b.p.y - T.pos.y));
+      posts.sort((a, b) => dhypot(a.p.x - T.pos.x, a.p.y - T.pos.y) - dhypot(b.p.x - T.pos.x, b.p.y - T.pos.y));
       const bPost = posts[0]!;
       const okB = okA && this.placer.place(sim, f, 'B', { shape: bPost.id }, [T.pos]);
       if (okA && okB) {
@@ -48,7 +49,7 @@ export class NeraBot implements AnyBot {
             // stand beyond Nera, opposite B, so the energy reaches her back
             const dx = A.x - B.x;
             const dy = A.y - B.y;
-            const l = Math.hypot(dx, dy) || 1;
+            const l = dhypot(dx, dy) || 1;
             const behind = { x: A.x + (dx / l) * 64, y: A.y + (dy / l) * 64 };
             const at = steerTo(sim, f, { x: Math.max(30, Math.min(386, behind.x)), y: Math.max(40, Math.min(250, behind.y)) }, 10);
             const fx = boss.view.parts.face;

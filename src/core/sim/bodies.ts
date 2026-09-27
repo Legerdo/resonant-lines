@@ -2,6 +2,7 @@
 import { type Vec, vec, rotate, sub, add, norm, dot, lerp, len } from '../math/vec.ts';
 import { segSeg, rayCircle, segCircle, closestOnSeg } from '../geometry/geom.ts';
 import type { Body, Shape, SegShape, CircleShape } from './types.ts';
+import { dhypot } from '../math/dmath.ts';
 
 export const toWorld = (b: Body, p: Vec): Vec => add(b.pos, rotate(p, b.angle));
 export const toWorldPrev = (b: Body, p: Vec): Vec => add(b.prevPos, rotate(p, b.prevAngle));
@@ -113,7 +114,7 @@ export function resolveCircle(bodies: readonly Body[], pos: Vec, r: number, iter
           const c = closestOnSeg(p, w.a, w.b);
           const dx = p.x - c.x;
           const dy = p.y - c.y;
-          const d = Math.hypot(dx, dy);
+          const d = dhypot(dx, dy);
           if (d < r) {
             let nx: number;
             let ny: number;
@@ -131,7 +132,7 @@ export function resolveCircle(bodies: readonly Body[], pos: Vec, r: number, iter
           const w = worldCircle(body, s);
           const dx = p.x - w.c.x;
           const dy = p.y - w.c.y;
-          const d = Math.hypot(dx, dy);
+          const d = dhypot(dx, dy);
           const min = w.r + r;
           if (d < min) {
             const nx = d > 1e-6 ? dx / d : 0;

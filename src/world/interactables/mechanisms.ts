@@ -1,5 +1,4 @@
-// Non-combat resonance mechanisms: harmless emitters + barriers that open when the right energy is delivered
-// into their socket. Used by the hub tutorial device and the region puzzles.
+// Non-combat mechanisms: harmless emitters + barriers that open when any charged pulse reaches their socket.
 import { DT } from '../../core/clock/fixedStep.ts';
 import { makeBody, seg, circle } from '../../core/sim/bodies.ts';
 import type { DeliveryInfo, PulseResult } from '../../core/sim/types.ts';
@@ -54,10 +53,6 @@ export class MechanismLogic implements AreaLogic {
     const m = this.mechs.find((x) => x.kind === 'barrier' && x.id === d.receiver);
     if (!m || m.kind !== 'barrier') return undefined;
     if (sim.flags.has(m.flag)) return 'none';
-    if (d.pulse.sig !== m.sig || (m.tone !== undefined && d.pulse.tone !== m.tone)) {
-      sim.emit({ type: 'sealRejected', id: m.id, pos: d.pos, text: 'signature' });
-      return 'fail';
-    }
     sim.flags.add(m.flag);
     const b = sim.body(`mech:${m.id}`);
     if (b) b.enabled = false;

@@ -1,0 +1,101 @@
+{
+  "hub": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 24
+  },
+  "garden": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 25
+  },
+  "belfry": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 21
+  },
+  "quarry": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 18
+  },
+  "marsh": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 28
+  },
+  "B01": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 22
+  },
+  "B02": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 23
+  },
+  "B03": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 29
+  },
+  "B04": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 26
+  },
+  "B05": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 33
+  },
+  "B06": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 18
+  },
+  "B07": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 28
+  },
+  "B08": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 20
+  },
+  "FINAL": {
+    "zoom": 2,
+    "offPalette": 0,
+    "nonUniformBlocks": 0,
+    "blocks": 230400,
+    "colors": 20
+  },
+  "missingArt": []
+}

@@ -52,6 +52,7 @@ export class App implements UiHost {
   readonly clock = new FixedStepClock(8);
   turbo = 1;
   zoom = 2;
+  dpr = 1;
   deathT = -1;
   victoryT = -1;
   victoryShown = false;
@@ -66,9 +67,15 @@ export class App implements UiHost {
   frameTimes: number[] = [];
   seed = 1;
   private lastHint = '';
+  /** F4 debug: recent collision events with their sub-tick t */
+  private collisionLog: string[] = [];
   ticksRun = 0;
   /** test hook: bot supplying input frames */
   bot: ((sim: Sim) => InputFrame) | null = null;
+  /** test hook: called right after a new Sim is built (before its first tick) */
+  onSimBuilt: ((areaId: string) => void) | null = null;
+  /** test hook: called before every sim tick with the input about to be applied */
+  tickHook: ((sim: Sim, input: InputFrame) => void) | null = null;
   private readonly viewport: HTMLElement;
 
   constructor(viewport: HTMLElement, uiRoot: HTMLElement, stage: HTMLElement, storage: Storage | null, debugEnabled: boolean) {
@@ -101,17 +108,26 @@ export class App implements UiHost {
     this.toTitle();
   }
 
+  /**
+   * Integer zoom measured in *device* pixels, and a device-pixel-aligned origin, so every world pixel is an exact
+   * zoom x zoom square of physical pixels at any window size or devicePixelRatio (no half-pixel centring blur).
+   */
   layout(): void {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    this.zoom = Math.max(1, Math.floor(Math.min(w / VIEW_W, h / VIEW_H)));
-    this.viewport.style.width = `${VIEW_W * this.zoom}px`;
-    this.viewport.style.height = `${VIEW_H * this.zoom}px`;
+    const dpr = window.devicePixelRatio || 1;
+    const devW = Math.floor(window.innerWidth * dpr);
+    const devH = Math.floor(window.innerHeight * dpr);
+    this.zoom = Math.max(1, Math.floor(Math.min(devW / VIEW_W, devH / VIEW_H)));
+    this.dpr = dpr;
+    const vs = this.viewport.style;
+    vs.width = `${(VIEW_W * this.zoom) / dpr}px`;
+    vs.height = `${(VIEW_H * this.zoom) / dpr}px`;
+    vs.left = `${Math.max(0, Math.floor((devW - VIEW_W * this.zoom) / 2)) / dpr}px`;
+    vs.top = `${Math.max(0, Math.floor((devH - VIEW_H * this.zoom) / 2)) / dpr}px`;
     const s = this.store.data.settings;
     const root = document.documentElement.style;
-    root.setProperty('--z', String(this.zoom));
+    root.setProperty('--z', String(this.zoom / dpr));
     root.setProperty('--ui', String(s.uiScale));
-    root.setProperty('--ps', String(Math.max(1, Math.round(this.zoom * s.uiScale))));
+    root.setProperty('--ps', String(Math.max(1, Math.round(this.zoom * s.uiScale)) / dpr));
   }
 
   get settings() {
@@ -304,6 +320,7 @@ export class App implements UiHost {
     this.clock.reset();
     this.renderer?.setArea(def, flags, def.decor ?? []);
     this.input.clearAll();
+    this.onSimBuilt?.(areaId);
     if (this.mode === 'play') {
       this.audio.setMusic(def.bossId ? bossEntry(def.bossId)?.music ?? 'none' : def.music);
       if (def.bossId) {
@@ -313,6 +330,7 @@ export class App implements UiHost {
       if (def.kind !== 'arena') {
         d.lastArea = def.id;
         d.lastSpawn = spawn;
+        this.store.write(); // checkpoint: entering a hub/region room (never inside a fight)
       }
     }
   }
@@ -335,10 +353,13 @@ export class App implements UiHost {
     }
     if (this.transition) this.stepTransition(dt);
     const sim = this.sim;
-    if (sim && this.mode === 'play' && !this.paused && !this.transition && !this.ui.menuOpen) {
+    // the victory card is an overlay: the world keeps running (defeat animation, needles returning, auto-continue)
+    const blocking = this.ui.menuOpen && this.ui.screen !== 'victory';
+    if (sim && this.mode === 'play' && !this.paused && !this.transition && !blocking) {
       const ticks = this.clock.advance(dt) * this.turbo;
       for (let i = 0; i < ticks; i++) {
         const frame = this.bot ? this.bot(sim) : this.input.consumeFrame(sim.player.pos, (v: Vec) => this.renderer?.screenToWorld(v.x, v.y) ?? v);
+        this.tickHook?.(sim, frame);
         const events = sim.step(frame);
         this.ticksRun++;
         if (this.run === 'story' && !sim.fight) this.store.data.storyTime += DT;
@@ -360,7 +381,7 @@ export class App implements UiHost {
       this.audio.updateHums(this.sim.links);
       this.ui.hud.update(this.sim);
       this.updateHints(this.sim);
-      if (this.debug.boss || this.debug.step) this.updateDebugPanel(this.sim);
+      if (this.debug.boss || this.debug.step || this.debug.links || this.debug.capture) this.updateDebugPanel(this.sim);
     } else this.audio.silenceHums();
     this.frameTimes.push(performance.now() - t0);
     if (this.frameTimes.length > 600) this.frameTimes.shift();
@@ -450,6 +471,11 @@ export class App implements UiHost {
   private handleEvents(sim: Sim, events: readonly SimEvent[]): void {
     const d = this.store.data;
     for (const e of events) {
+      if (this.debug.capture && e.t !== undefined) {
+        // F4: sub-tick collision time of captures / overloads / needle hits (continuous collision, §16)
+        this.collisionLog.push(`${sim.tick} ${e.type} ${e.link ?? e.needle ?? ''} ${e.sig ?? e.id ?? ''} t=${e.t.toFixed(3)}`);
+        if (this.collisionLog.length > 6) this.collisionLog.shift();
+      }
       switch (e.type) {
         case 'exit': {
           const [to, spawn] = (e.text ?? '').split('|');
@@ -462,6 +488,12 @@ export class App implements UiHost {
             break;
           }
           this.beginTransition(to, spawn ?? 'default');
+          break;
+        }
+        case 'exitLocked': {
+          const sub = e.id === 'toHeart' ? t('heart.need', { n: storyBossesDone(d) }) : '';
+          this.ui.toast(t(e.text ?? 'hint.locked'), sub, 2.2);
+          this.sfx('uiBack');
           break;
         }
         case 'interact': {
@@ -477,7 +509,7 @@ export class App implements UiHost {
           if (e.text && setFlag(d, e.text)) {
             if (e.text === 'tutorialDone') {
               for (const r of ['garden', 'belfry', 'quarry', 'marsh']) if (!d.unlockedRegions.includes(r)) d.unlockedRegions.push(r);
-              this.ui.toast(t('heart.need', { n: storyBossesDone(d) }), '', 2.4);
+              this.ui.toast(t('tutorial.done'), t('tutorial.controls'), 3.8);
             }
             this.store.write(); // save boundary: region unlock / puzzle
           }
@@ -518,7 +550,13 @@ export class App implements UiHost {
 
   private updateHints(sim: Sim): void {
     let hint: string | null = null;
-    if (sim.area.id === 'hub' && !sim.flags.has('tutorialDone')) hint = tutorialHint(sim);
+    if (sim.boss && sim.fight && sim.fight.result !== 'defeat' && sim.fight.result !== 'victory') {
+      const charged = sim.links.some((l) => l.valid && (l.state === 'Charged' || l.state === 'Overloaded'));
+      const linked = sim.links.some((l) => l.valid);
+      hint = charged
+        ? sim.boss.coreExposed ? t('hint.bossFinish') : t('hint.bossPulse')
+        : linked ? t('hint.bossWait') : t('hint.bossNeedle');
+    } else if (sim.area.id === 'hub' && !sim.flags.has('tutorialDone')) hint = tutorialHint(sim);
     this.ui.setHint(hint);
     let prompt: string | null = null;
     if (!sim.fight) {
@@ -542,6 +580,7 @@ export class App implements UiHost {
       for (const n of sim.needles) lines.push(`${n.id} ${n.state} ${n.host?.shapeId ?? ''}`);
       for (const l of sim.links) lines.push(`${l.id} ${l.valid ? 'V' : '-'} ${l.state} ${l.sig ?? ''} ${l.blocked} ${l.length.toFixed(0)}`);
     }
+    if (this.debug.capture) lines.push('collision t (tick event t):', ...this.collisionLog);
     this.ui.debugPanel.textContent = lines.join('\n');
   }
 
@@ -632,7 +671,7 @@ export class App implements UiHost {
         break;
     }
     d.any = d.hurtbox || d.links || d.capture || d.pulse;
-    this.ui.debugPanel.classList.toggle('hidden', !(d.boss || d.step || d.links));
+    this.ui.debugPanel.classList.toggle('hidden', !(d.boss || d.step || d.links || d.capture));
   }
 
   // ---------------------------------------------------------------- test/QA helpers
@@ -646,6 +685,11 @@ export class App implements UiHost {
       screen: this.ui.screen,
       area: this.areaId,
       zoom: this.zoom,
+      dpr: this.dpr,
+      viewportRect: (() => {
+        const r = this.viewport.getBoundingClientRect();
+        return { x: r.x, y: r.y, w: r.width, h: r.height };
+      })(),
       fps: this.fps,
       ticks: this.ticksRun,
       transition: !!this.transition,
@@ -653,6 +697,8 @@ export class App implements UiHost {
       pad: this.input.pad,
       heldInputs: this.input.heldCount(),
       missingArt: this.assets ? [...this.assets.missing] : [],
+      displayObjects: this.scene ? this.scene.children.list.length : 0,
+      domNodes: document.getElementsByTagName('*').length,
       save: {
         completed: [...d.completedBossIds], discovered: [...d.discoveredBossIds], tunings: [...d.unlockedTunings], equipped: [...d.equippedTunings],
         finalGate: d.finalGateUnlocked, ending: d.endingSeen, flags: [...d.flags], best: { ...d.bossBestTimes }, deaths: { ...d.bossDeathCounts },
@@ -668,6 +714,8 @@ export class App implements UiHost {
             links: sim.links.map((l) => ({ id: l.id, valid: l.valid, state: l.state, sig: l.sig, blocked: l.blocked, length: l.length })),
             lattice: sim.lattice.formed,
             flags: [...sim.flags],
+            log: sim.log.slice(-60),
+            counts: { attacks: sim.attacks.length, pulses: sim.pulses.length, bodies: sim.bodies.length },
           }
         : null,
     };

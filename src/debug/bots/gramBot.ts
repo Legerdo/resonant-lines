@@ -7,6 +7,7 @@ import type { Vec } from '../../core/math/vec.ts';
 import { NIDX, clearShot, danger, embeddedIn, lurePoint, shapePos, steerTo, throwSpots } from './botKit.ts';
 import { isEmbedded } from '../../resonance/needle.ts';
 import type { GramBoss } from '../../bosses/definitions/b01Gram.ts';
+import { dhypot } from '../../core/math/dmath.ts';
 
 type Step = 'sealN' | 'sealW' | 'sealE' | 'core' | 'done';
 
@@ -143,7 +144,7 @@ export class GramBot implements Bot {
         }
         // bait a crash near the north wall between sealN and sealE, then shoot the socket while Gram is dazed
         const socket = shapePos(sim, 'gram:socket')!;
-        const between = Math.hypot(gram.x - N.x, gram.y - N.y) < 165 && Math.hypot(gram.x - E.x, gram.y - E.y) < 165;
+        const between = dhypot(gram.x - N.x, gram.y - N.y) < 165 && dhypot(gram.x - E.x, gram.y - E.y) < 165;
         if (boss.state === 'crash' && between) {
           const me = sim.player.pos;
           if (clearShot(sim, me, socket, 'gram:socket')) {
@@ -177,7 +178,7 @@ export class GramBot implements Bot {
         // ring about to pass: dash through toward its centre
         const ring = sim.attacks.find((a) => a.phase === 'active' && a.shape?.kind === 'ring');
         if (ring && ring.shape?.kind === 'ring') {
-          const d = Math.hypot(sim.player.pos.x - ring.shape.c.x, sim.player.pos.y - ring.shape.c.y);
+          const d = dhypot(sim.player.pos.x - ring.shape.c.x, sim.player.pos.y - ring.shape.c.y);
           if (d - ring.shape.rOut < 14 && d > ring.shape.rIn - 6) {
             f.move = { x: (ring.shape.c.x - sim.player.pos.x) / (d || 1), y: (ring.shape.c.y - sim.player.pos.y) / (d || 1) };
             f.dash = true;

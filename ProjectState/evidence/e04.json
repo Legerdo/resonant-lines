@@ -1,0 +1,134 @@
+[
+  {
+    "boss": "B01",
+    "route": [
+      "hub",
+      "quarry",
+      "arena_B01"
+    ],
+    "seconds": 19.8,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": false,
+    "gateText": false,
+    "returnedTo": "quarry"
+  },
+  {
+    "boss": "B01",
+    "route": [
+      "quarry",
+      "arena_B01"
+    ],
+    "seconds": 19.8,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": false,
+    "gateText": false,
+    "returnedTo": "quarry"
+  },
+  {
+    "boss": "B02",
+    "route": [
+      "quarry",
+      "hub",
+      "belfry",
+      "arena_B02"
+    ],
+    "seconds": 13.9,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": false,
+    "gateText": false,
+    "returnedTo": "belfry"
+  },
+  {
+    "boss": "B06",
+    "route": [
+      "belfry",
+      "hub",
+      "quarry",
+      "puzzle:quarry",
+      "arena_B06"
+    ],
+    "seconds": 16.5,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": false,
+    "gateText": false,
+    "returnedTo": "quarry"
+  },
+  {
+    "boss": "B07",
+    "route": [
+      "quarry",
+      "hub",
+      "garden",
+      "puzzle:garden",
+      "arena_B07"
+    ],
+    "seconds": 14.3,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": false,
+    "gateText": false,
+    "returnedTo": "garden"
+  },
+  {
+    "boss": "B04",
+    "route": [
+      "garden",
+      "arena_B04"
+    ],
+    "seconds": 24.5,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": true,
+    "gateText": true,
+    "returnedTo": "garden"
+  },
+  {
+    "boss": "B08",
+    "route": [
+      "garden",
+      "hub",
+      "belfry",
+      "puzzle:belfry",
+      "arena_B08"
+    ],
+    "seconds": 29.1,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": true,
+    "gateText": false,
+    "returnedTo": "belfry"
+  },
+  {
+    "boss": "B03",
+    "route": [
+      "belfry",
+      "hub",
+      "marsh",
+      "arena_B03"
+    ],
+    "seconds": 46.1,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": true,
+    "gateText": false,
+    "returnedTo": "marsh"
+  },
+  {
+    "boss": "B05",
+    "route": [
+      "marsh",
+      "puzzle:marsh",
+      "arena_B05"
+    ],
+    "seconds": 37.1,
+    "shieldDebug": false,
+    "deathsBeforeWin": 0,
+    "gate": true,
+    "gateText": false,
+    "returnedTo": "marsh"
+  }
+]

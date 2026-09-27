@@ -1,0 +1,18 @@
+{
+  "issues": [
+    "outside div[p-outside]\"밖으로\"",
+    "text div[p-spill]\"넘치는 한국어 문장이 길다\"",
+    "text div[p-clip]\"잘리는 한국어 문장이 길다\"",
+    "clipped div[p-clip]\"잘리는 한국어 문장이 길다\"",
+    "contain span[p-wide]\"넓은\" in div\"넓은\"",
+    "hscroll div[p-hscroll]\"가로로 넘치는 패널\"",
+    "hclip div\"가로로 넘치는 패널\"",
+    "unreachable(taller than panel) div\"가로로 넘치는 패널\"",
+    "unreachable(taller than panel) div\"패널보다 큰 항목\"",
+    "overlap span[p-a]\"겹침가\" x span[p-b]\"겹침나\"",
+    "overlap button[p-btn1]\"왼쪽\" x button[p-btn2]\"오른쪽\"",
+    "overlap span.icon[p-i1]\"\" x span.icon[p-i2]\"\""
+  ],
+  "probes": 3,
+  "scrollers": 3
+}

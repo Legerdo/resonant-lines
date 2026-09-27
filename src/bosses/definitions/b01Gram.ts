@@ -10,6 +10,7 @@ import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
 import { dirTo, dislodgeNear, embeddedOn, moveBody, wallDistance } from '../behaviors/helpers.ts';
 import { applyCapture, breakLink } from '../../resonance/link.ts';
+import { dcos, dsin } from '../../core/math/dmath.ts';
 
 type State = 'idle' | 'windup' | 'charge' | 'crash' | 'recover' | 'rear' | 'stomp' | 'pinned' | 'reel';
 
@@ -202,8 +203,8 @@ export class GramBoss implements BossController {
       for (let i = 0; i < n; i++) {
         const a = sim.rng.range(0, Math.PI * 2);
         const d = sim.rng.range(10, 46);
-        const x = Math.max(28, Math.min(388, sim.player.pos.x + Math.cos(a) * d));
-        const y = Math.max(44, Math.min(244, sim.player.pos.y + Math.sin(a) * d));
+        const x = Math.max(28, Math.min(388, sim.player.pos.x + dcos(a) * d));
+        const y = Math.max(44, Math.min(244, sim.player.pos.y + dsin(a) * d));
         sim.spawnAttack({ kind: 'zone', owner: 'gram', harmful: true, p: { x, y, r: 10, tele: 1.0 + i * 0.18, active: 0.12, rock: 1 } });
       }
     }

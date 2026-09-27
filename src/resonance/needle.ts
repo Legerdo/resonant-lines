@@ -56,7 +56,7 @@ function anchorActive(shape: Shape): boolean {
   return shape.enabled && isAnchorTag(shape.tag);
 }
 
-function embed(sim: Sim, n: Needle, hit: RayHit): void {
+function embed(sim: Sim, n: Needle, hit: RayHit, tickT = 1): void {
   const localPos = add(hit.localPoint, scale(hit.localNormal, CFG.needle.embedOffset));
   n.host = { bodyId: hit.body.id, shapeId: hit.shape.id, local: localPos, localNormal: copy(hit.localNormal) };
   n.pos = toWorld(hit.body, localPos);
@@ -64,11 +64,12 @@ function embed(sim: Sim, n: Needle, hit: RayHit): void {
   n.state = hit.body.kind === 'boss' ? 'EmbeddedBoss' : 'EmbeddedWorld';
   n.timer = hit.shape.tag === 'HazardAnchor' ? CFG.needle.hazardTime : 0;
   n.stateTick = sim.tick;
-  sim.emit({ type: 'needleEmbedded', needle: n.id, pos: copy(n.pos), dir: copy(n.normal), id: hit.shape.id, value: hit.body.kind === 'boss' ? 1 : 0 });
+  sim.emit({ type: 'needleEmbedded', needle: n.id, pos: copy(n.pos), dir: copy(n.normal), id: hit.shape.id, value: hit.body.kind === 'boss' ? 1 : 0, t: tickT });
 }
 
 function flyStep(sim: Sim, n: Needle): void {
-  let remaining = n.speed * DT;
+  const full = n.speed * DT;
+  let remaining = full;
   let from = copy(n.pos);
   const passed = new Set<string>();
   for (let iter = 0; iter < 4 && remaining > 1e-6; iter++) {
@@ -85,7 +86,7 @@ function flyStep(sim: Sim, n: Needle): void {
     remaining -= travel;
     const response = sim.boss?.onNeedleHit?.(sim, n, hit) ?? (anchorActive(hit.shape) ? 'embed' : 'bounce');
     if (response === 'embed') {
-      embed(sim, n, hit);
+      embed(sim, n, hit, full > 0 ? (full - remaining) / full : 1);
       return;
     }
     if (response === 'pass') {

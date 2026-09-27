@@ -46,7 +46,8 @@ export function overloadBreak(sim: Sim, l: Link): void {
   breakLink(sim, l, 'overload');
 }
 
-export function applyCapture(sim: Sim, l: Link, sig: Signature, tone: number, attackId: number): void {
+/** `t` = sub-tick time of the attack/link intersection (shown by the F4 debug overlay; 1 for scripted captures) */
+export function applyCapture(sim: Sim, l: Link, sig: Signature, tone: number, attackId: number, t = 1): void {
   const pos = linkMid(sim, l);
   if (l.state === 'Idle' || l.state === 'Charging') {
     l.state = 'Charged';
@@ -55,20 +56,20 @@ export function applyCapture(sim: Sim, l: Link, sig: Signature, tone: number, at
     l.power = 1;
     l.progress = 0;
     l.stateTick = sim.tick;
-    sim.emit({ type: 'capture', link: l.id, sig, value: tone, pos });
+    sim.emit({ type: 'capture', link: l.id, sig, value: tone, pos, t });
   } else if (l.state === 'Charged') {
     if (l.sig === sig && l.tone === tone) {
       l.state = 'Overloaded';
       l.power = 2;
       l.overloadT = sim.mods.overloadDuration;
       l.stateTick = sim.tick;
-      sim.emit({ type: 'overload', link: l.id, sig, value: tone, pos });
+      sim.emit({ type: 'overload', link: l.id, sig, value: tone, pos, t });
     } else {
       l.sig = sig;
       l.tone = tone;
       l.power = 1;
       l.stateTick = sim.tick;
-      sim.emit({ type: 'capture', link: l.id, sig, value: tone, pos });
+      sim.emit({ type: 'capture', link: l.id, sig, value: tone, pos, t });
     }
   } else if (l.state === 'Overloaded') {
     overloadBreak(sim, l);

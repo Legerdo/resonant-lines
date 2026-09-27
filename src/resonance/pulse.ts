@@ -1,28 +1,32 @@
-// Directional Pulse (LOCKED-R04). Aim at a needle and press E: energy stored in the live links touching that needle
-// flows INTO it (A->B delivers to B's host, B->A to A's host). The front travels at a finite speed so every hit and
-// delivery has an exact sub-tick time.
+// E releases stored energy. World mechanisms still route toward the aimed endpoint; boss fights send every charged
+// line at once and advance one seal, so players never need to learn signal types or target a particular boss part.
 import { DT } from '../core/clock/fixedStep.ts';
 import { dist, dist2, lerp, norm, sub, copy } from '../core/math/vec.ts';
 import { segCircle, segSegDist2 } from '../core/geometry/geom.ts';
 import { worldCircle, worldSeg } from '../core/sim/bodies.ts';
-import type { Link, Needle, Pulse, DeliveryInfo, PulseResult } from '../core/sim/types.ts';
+import type { Link, Needle, Pulse, DeliveryInfo } from '../core/sim/types.ts';
 import type { Sim } from '../core/sim/sim.ts';
 import { isEmbedded } from './needle.ts';
 
 export const isCharged = (l: Link): boolean => l.valid && (l.state === 'Charged' || l.state === 'Overloaded');
 
 /** XOR of the global reverse-tide flag and per-link anti-phase */
-export const flowInvertedFor = (sim: Sim, l: Link): boolean => sim.flowInverted !== sim.invertedLinks.has(l.id);
+export const flowInvertedFor = (sim: Sim, l: Link): boolean => !sim.boss && sim.flowInverted !== sim.invertedLinks.has(l.id);
 
 export interface PulsePlan {
   target: Needle;
   links: Link[];
+  automatic?: boolean;
 }
 
-/** Target = the embedded needle nearest the aim point that has at least one charged link. */
+/** Boss fights auto-select every charged line; mechanisms route toward the embedded needle nearest the aim point. */
 export function planPulse(sim: Sim): PulsePlan | null {
   const charged = sim.links.filter(isCharged);
   if (charged.length === 0) return null;
+  if (sim.boss) {
+    const target = sim.needles.find((n) => isEmbedded(n) && charged.some((l) => l.a === n.id || l.b === n.id));
+    return target ? { target, links: charged, automatic: true } : null;
+  }
   const aim = sim.player.aim;
   let target: Needle | null = null;
   let best = Infinity;
@@ -50,9 +54,9 @@ export function releasePulse(sim: Sim): void {
   const group = sim.nextId();
   for (const l of plan.links) {
     const other = l.a === plan.target.id ? l.b : l.a;
-    const inverted = flowInvertedFor(sim, l);
-    const fromId = inverted ? plan.target.id : other;
-    const toId = inverted ? other : plan.target.id;
+    const inverted = plan.automatic ? false : flowInvertedFor(sim, l);
+    const fromId = plan.automatic ? l.a : inverted ? plan.target.id : other;
+    const toId = plan.automatic ? l.b : inverted ? other : plan.target.id;
     const from = sim.needle(fromId);
     const toN = sim.needle(toId);
     const q: Pulse = {
@@ -122,8 +126,7 @@ function deliver(sim: Sim, q: Pulse, to: Needle, t: number): void {
   const info: DeliveryInfo = {
     pulse: q, needle: to, bodyId: host.bodyId, shapeId: host.shapeId, receiver: found?.shape.receiver, t, pos: copy(to.pos),
   };
-  let result: PulseResult | undefined = sim.boss?.onPulseDelivered?.(sim, info);
-  if (result === undefined) result = sim.logic?.onPulseDelivered?.(sim, info);
+  const result = sim.boss ? sim.resolveSimpleBossPulse(info) : sim.logic?.onPulseDelivered?.(sim, info);
   const r = result ?? 'none';
   sim.record(`deliver ${q.from}->${q.to} ${host.shapeId} ${r}`);
   sim.emit({ type: 'pulseDelivered', link: q.linkId, needle: to.id, sig: q.sig, pos: copy(to.pos), result: r, id: host.shapeId, value: q.power });

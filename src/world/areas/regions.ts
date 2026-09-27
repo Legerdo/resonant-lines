@@ -125,7 +125,8 @@ export const GARDEN: AreaDef = {
     { id: 'doorB07', kind: 'bossDoorSide', pos: { x: 10, y: 136 }, variant: 6 },
     { id: 'whirl', kind: 'whirl', pos: { x: 200, y: 250 }, r: 6, blocksNeedle: true },
     { id: 'vineGate', kind: 'vineGate', pos: { x: 8, y: 160 } },
-    { id: 'post', kind: 'post', pos: { x: 120, y: 290 }, r: 6, tag: 'Anchorable' },
+    // post <-> vine socket = ~150px (inside the 180px link limit from any throw angle); the whirl's ring reaches it
+    { id: 'post', kind: 'post', pos: { x: 104, y: 264 }, r: 6, tag: 'Anchorable' },
     { id: 'tree1', kind: 'tree', pos: { x: 500, y: 290 }, r: 8 },
     { id: 'tree2', kind: 'tree', pos: { x: 90, y: 60 }, r: 8 },
     { id: 'tree3', kind: 'tree', pos: { x: 560, y: 60 }, r: 8 },
@@ -183,7 +184,8 @@ export const BELFRY: AreaDef = {
     { id: 'doorB08', kind: 'bossDoor', pos: { x: 456, y: 18 }, variant: 7 },
     { id: 'chimes', kind: 'chimes', pos: { x: 288, y: 130 }, r: 6, blocksNeedle: true },
     { id: 'bellGate', kind: 'bellGate', pos: { x: 456, y: 48 } },
-    { id: 'post', kind: 'post', pos: { x: 200, y: 110 }, r: 6, tag: 'Anchorable' },
+    // post <-> bell socket = ~88px; the chimes' tone-2 ring (r<=120) sweeps the post end of that line
+    { id: 'post', kind: 'post', pos: { x: 380, y: 100 }, r: 6, tag: 'Anchorable' },
     { id: 'bellR', kind: 'smallBell', pos: { x: 90, y: 200 }, variant: 0 },
     { id: 'bellL', kind: 'smallBell', pos: { x: 490, y: 200 }, variant: 1 },
     { id: 'lampB1', kind: 'lamp', pos: { x: 250, y: 230 }, r: 4 },
@@ -241,7 +243,8 @@ export const MARSH: AreaDef = {
   props: [
     { id: 'doorB03', kind: 'bossDoor', pos: { x: 400, y: 18 }, variant: 2 },
     { id: 'doorB05', kind: 'bossDoorSide', pos: { x: 630, y: 168 }, variant: 4 },
-    { id: 'lens', kind: 'sunLens', pos: { x: 470, y: 250 }, r: 6, blocksNeedle: true },
+    // the lens beam (x=560, upward) crosses the mirror post <-> gate socket line
+    { id: 'lens', kind: 'sunLens', pos: { x: 560, y: 250 }, r: 6, blocksNeedle: true },
     { id: 'mirrorGate', kind: 'mirrorGate', pos: { x: 632, y: 192 } },
     { id: 'post', kind: 'mirrorPost', pos: { x: 540, y: 200 }, r: 6, tag: 'Anchorable' },
     { id: 'reed1', kind: 'reeds', pos: { x: 120, y: 60 } },
@@ -258,7 +261,7 @@ export const MARSH: AreaDef = {
   ],
   interactables: [{ id: 'muralM', kind: 'mural', pos: { x: 160, y: 40 }, r: 20, textKey: 'mural.marsh' }],
   mechs: [
-    { id: 'lens', kind: 'emitter', pos: { x: 470, y: 250 }, sig: 'Heat', shape: 'beam', angle: -Math.PI / 2, period: 2.6, range: 170, unlessFlag: 'puzzle:marsh' },
+    { id: 'lens', kind: 'emitter', pos: { x: 560, y: 250 }, sig: 'Heat', shape: 'beam', angle: -Math.PI / 2, period: 2.6, range: 170, unlessFlag: 'puzzle:marsh' },
     { id: 'mirrorGate', kind: 'barrier', rect: { x: 624, y: 144, w: 16, h: 48 }, socket: { x: 610, y: 150 }, sig: 'Heat', flag: 'puzzle:marsh', visual: 'mirrorGate' },
   ],
 };

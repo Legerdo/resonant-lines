@@ -1,5 +1,6 @@
 // Exact 2D geometry used by every gameplay decision (needles, links, capture, pulse, hits).
 import { type Vec, cross, dot, sub, len2, dist2, clamp } from '../math/vec.ts';
+import { dasin, datan2 } from '../math/dmath.ts';
 
 export interface SegHit {
   t: number; // along p0->p1
@@ -81,7 +82,7 @@ export function segRing(a: Vec, b: Vec, c: Vec, rIn: number, rOut: number, arc?:
     const y = a.y + (b.y - a.y) * t - c.y;
     const d2 = x * x + y * y;
     if (d2 < rIn * rIn || d2 > rOut * rOut) continue;
-    const da = Math.abs(angleWrap(Math.atan2(y, x) - arc.ang));
+    const da = Math.abs(angleWrap(datan2(y, x) - arc.ang));
     if (da <= arc.half) return true;
   }
   return false;
@@ -91,8 +92,8 @@ export function circleRing(p: Vec, pr: number, c: Vec, rIn: number, rOut: number
   const d = Math.sqrt(dist2(p, c));
   if (d + pr < rIn || d - pr > rOut) return false;
   if (!arc) return true;
-  const da = Math.abs(angleWrap(Math.atan2(p.y - c.y, p.x - c.x) - arc.ang));
-  const slack = d > 1 ? Math.asin(Math.min(1, pr / d)) : Math.PI;
+  const da = Math.abs(angleWrap(datan2(p.y - c.y, p.x - c.x) - arc.ang));
+  const slack = d > 1 ? dasin(Math.min(1, pr / d)) : Math.PI;
   return da <= arc.half + slack;
 }
 

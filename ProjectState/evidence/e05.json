@@ -1,0 +1,79 @@
+{
+  "phases": [
+    "A",
+    "B",
+    "C"
+  ],
+  "trace": [
+    "278:seal circ0",
+    "1629:seal circ1",
+    "2143:seal circ2",
+    "2143:phase B",
+    "2302:seal antiN",
+    "2638:seal antiS",
+    "2638:coreExposed",
+    "2638:phase C",
+    "2932:victory"
+  ],
+  "finalSeconds": 47.7833333333319,
+  "replaySeconds": 13.850000000000268,
+  "fullClearSeconds": 377.08,
+  "save": {
+    "completed": [
+      "B01",
+      "B02",
+      "B06",
+      "B07",
+      "B04",
+      "B08",
+      "B03",
+      "B05",
+      "FINAL"
+    ],
+    "discovered": [
+      "B01",
+      "B02",
+      "B06",
+      "B07",
+      "B04",
+      "B08",
+      "B03",
+      "B05",
+      "FINAL"
+    ],
+    "tunings": [
+      "elasticNeedle",
+      "echo",
+      "swiftNeedle",
+      "threadWeaver",
+      "stableNet",
+      "rapidTune",
+      "wideCapture",
+      "longLine"
+    ],
+    "equipped": [],
+    "finalGate": true,
+    "ending": true,
+    "flags": [
+      "tutorialDone",
+      "puzzle:quarry",
+      "puzzle:garden",
+      "puzzle:belfry",
+      "puzzle:marsh",
+      "heartRestarted"
+    ],
+    "best": {
+      "B01": 19.83,
+      "B02": 13.85,
+      "B06": 16.53,
+      "B07": 14.33,
+      "B04": 24.47,
+      "B08": 29.08,
+      "B03": 46.1,
+      "B05": 37.13,
+      "FINAL": 47.78
+    },
+    "deaths": {},
+    "fullClear": 377.08
+  }
+}

@@ -5,6 +5,7 @@ import { circleRing, segRing, segCircle, pointSegDist2, segSegDist2 } from '../.
 import { raycast } from '../../core/sim/bodies.ts';
 import type { Attack, AttackShape } from '../../core/sim/types.ts';
 import type { Sim } from '../../core/sim/sim.ts';
+import { dhypot } from '../../core/math/dmath.ts';
 
 export function cloneShape(s: AttackShape | null): AttackShape | null {
   if (!s) return null;
@@ -144,7 +145,7 @@ export function updateAttack(sim: Sim, a: Attack): void {
         const hit = raycast(sim.bodies, from, to, (b, s) => b.kind === 'world' && s.blocksNeedle && s.kind === 'seg');
         p.x = hit ? hit.point.x : to.x;
         p.y = hit ? hit.point.y : to.y;
-        p.range = (p.range ?? 400) - Math.hypot(p.vx!, p.vy!) * DT;
+        p.range = (p.range ?? 400) - dhypot(p.vx!, p.vy!) * DT;
         a.shape = { kind: 'circle', c: { x: p.x, y: p.y }, r: p.r! };
         if (hit || p.range <= 0) setPhase(sim, a, 'done');
       }
@@ -153,7 +154,10 @@ export function updateAttack(sim: Sim, a: Attack): void {
     case 'beam': {
       const ang = p.ang! + (p.spin ?? 0) * a.age;
       const o = { x: p.x!, y: p.y! };
-      const end = add(o, fromAngle(ang, p.len!));
+      let end = add(o, fromAngle(ang, p.len!));
+      // light stops at the first stone wall: a beam never reaches (or reads as passing) through the arena edge
+      const wall = raycast(sim.bodies, o, end, (b, s) => b.kind === 'world' && s.kind === 'seg' && s.blocksNeedle);
+      if (wall) end = wall.point;
       if (a.phase === 'telegraph') {
         a.tele = { kind: 'capsule', a: o, b: end, r: 1 };
         if (a.t >= p.tele!) {

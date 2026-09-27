@@ -10,6 +10,7 @@ import { makeBody, circle, resolveCircle } from '../../core/sim/bodies.ts';
 import type { Attack, Body, DeliveryInfo, Link, PulseResult } from '../../core/sim/types.ts';
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
+import { dcos, dsin, dtan } from '../../core/math/dmath.ts';
 
 export const EYE = {
   pos: { x: 208, y: 52 },
@@ -31,7 +32,7 @@ export const aligned = (sim: Sim, l: Link): boolean => {
   const b = sim.needle(l.b).pos;
   const dx = Math.abs(b.x - a.x);
   const dy = Math.abs(b.y - a.y);
-  return dx > 1 && dy / dx <= Math.tan((EYE.alignDeg * Math.PI) / 180);
+  return dx > 1 && dy / dx <= dtan((EYE.alignDeg * Math.PI) / 180);
 };
 
 export class EyeBoss implements BossController {
@@ -72,7 +73,7 @@ export class EyeBoss implements BossController {
   private raftPos(i: number): Vec {
     const r = EYE.rafts[i]!;
     const a = this.raftA[i]!;
-    return { x: r.c.x + Math.cos(a) * r.rx, y: r.c.y + Math.sin(a) * r.ry };
+    return { x: r.c.x + dcos(a) * r.rx, y: r.c.y + dsin(a) * r.ry };
   }
 
   update(sim: Sim): void {

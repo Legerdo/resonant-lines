@@ -71,6 +71,8 @@ export class Sim {
   pendingHits: PendingHit[] = [];
   pendingVictory: { t: number; pos: Vec } | null = null;
   pendingPulse = false;
+  /** id of the sealed exit the player is currently standing in (edge-triggers the exitLocked hint) */
+  lockedExit: string | null = null;
   stableNetUsed = false;
   /** reverse tide / anti-phase: energy flows OUT of the aimed needle instead of into it (set by bosses) */
   flowInverted = false;
@@ -78,6 +80,7 @@ export class Sim {
   invertedLinks = new Set<string>();
   private nextIdValue = 1;
   private committedEvents = new Set<string>();
+  private simplePulseGroups = new Set<number>();
 
   constructor(opts: SimOptions) {
     this.area = opts.area;
@@ -230,6 +233,23 @@ export class Sim {
     }
     return true;
   }
+  /** One charged counter breaks the next seal; the next counter after the core opens wins the fight. */
+  resolveSimpleBossPulse(d: DeliveryInfo): PulseResult {
+    const boss = this.boss;
+    if (!boss || !this.fightOngoing || this.simplePulseGroups.has(d.pulse.group)) return 'none';
+    this.simplePulseGroups.add(d.pulse.group);
+    const pos = this.bodies.find((b) => b.enabled && b.kind === 'boss')?.pos ?? d.pos;
+    const nextSeal = boss.seals.find((seal) => !seal.broken && !seal.optional);
+    if (nextSeal) {
+      if (!this.breakSeal(nextSeal.id, `simple-pulse-${d.pulse.group}`, pos)) return 'none';
+      const brokenSeals = boss.seals.filter((seal) => seal.broken && !seal.optional).length;
+      boss.onSimpleProgress?.(this, brokenSeals);
+      return 'success';
+    }
+    if (!boss.coreExposed) return 'none';
+    this.requestVictory(d.t, pos);
+    return this.pendingVictory ? 'success' : 'none';
+  }
   /** Boss completion request at sub-tick time t (0..1). Resolved against lethal hits at the end of the tick. */
   requestVictory(t: number, pos: Vec): void {
     if (!this.fightOngoing || !this.boss?.coreExposed) return;
@@ -342,14 +362,24 @@ export class Sim {
   private checkAreaTriggers(input: InputFrame): void {
     const p = this.player;
     if (p.dead) return;
+    let lockedHere: string | null = null;
     for (const ex of this.area.exits) {
-      if (ex.requires && !this.flags.has(ex.requires)) continue;
       const r = ex.rect;
-      if (p.pos.x > r.x && p.pos.x < r.x + r.w && p.pos.y > r.y && p.pos.y < r.y + r.h) {
-        this.emit({ type: 'exit', id: ex.id, text: `${ex.to}|${ex.spawn}` });
-        return;
+      const locked = !!ex.requires && !this.flags.has(ex.requires);
+      // a sealed exit is solid (see buildWorldBody), so "at the door" means touching it
+      const m = locked ? 8 : 0;
+      const inside = p.pos.x > r.x - m && p.pos.x < r.x + r.w + m && p.pos.y > r.y - m && p.pos.y < r.y + r.h + m;
+      if (!inside) continue;
+      if (locked) {
+        lockedHere = ex.id;
+        // sealed exit: tell the player once per approach (no transition)
+        if (this.lockedExit !== ex.id) this.emit({ type: 'exitLocked', id: ex.id, text: ex.lockedKey ?? 'hint.locked' });
+        continue;
       }
+      this.emit({ type: 'exit', id: ex.id, text: `${ex.to}|${ex.spawn}` });
+      return;
     }
+    this.lockedExit = lockedHere;
     if (input.pulse) {
       for (const it of this.area.interactables) {
         if ((p.pos.x - it.pos.x) ** 2 + (p.pos.y - it.pos.y) ** 2 <= it.r * it.r) {

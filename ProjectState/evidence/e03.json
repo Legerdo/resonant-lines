@@ -1,0 +1,15 @@
+{
+  "hostA": "w4",
+  "hostB": "mech:tutorialDoor:socket",
+  "westTrace": [
+    "146:pulse B->A Wave p1",
+    "156:deliver B->A w4 none"
+  ],
+  "doorTrace": [
+    "146:pulse B->A Wave p1",
+    "156:deliver B->A w4 none",
+    "295:pulse A->B Wave p1",
+    "305:open tutorialDoor",
+    "305:deliver A->B mech:tutorialDoor:socket success"
+  ]
+}

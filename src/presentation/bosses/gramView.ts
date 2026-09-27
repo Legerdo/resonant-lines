@@ -36,7 +36,8 @@ registerBossView('B01', (ctx: ViewCtx) => {
   const face = v.facing >= 0 ? 'r' : 'l';
   const px = body.x;
   const py = body.y + 12;
-  const flash = v.flash > 0 && ctx.frame % 4 < 2;
+  // hit strobe only when flashing effects are allowed (settings: 번쩍임); the stagger pose still reads without it
+  const flash = ctx.opts.flash && v.flash > 0 && ctx.frame % 4 < 2;
   const img = ctx.pool.draw('boss_gram', `${poseName}${idx}_${plates}_${face}`, px, py, ySort(py));
   if (img && flash) img.setVisible(ctx.frame % 2 === 0);
   // shadow on the ground (ordered dither, palette exact)

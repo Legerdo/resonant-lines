@@ -5,6 +5,7 @@ import type { Vec } from '../../core/math/vec.ts';
 import { Placer, survive, steerTo } from './botKit.ts';
 import { ORBIT, type OrbitBoss } from '../../bosses/definitions/b07Orbit.ts';
 import type { AnyBot } from './index.ts';
+import { datan2, dcos, dsin } from '../../core/math/dmath.ts';
 
 export class OrbitBot implements AnyBot {
   name = 'B07';
@@ -36,8 +37,8 @@ export class OrbitBot implements AnyBot {
       // predict the configuration when a pulse released now would land (startup + travel ~0.2 s)
       const lead = 0.2 * ((Math.PI * 2) / ORBIT.pAr + (Math.PI * 2) / ORBIT.pOr) * (boss.coreExposed ? 1.25 : 1);
       const sepNow = boss.separation();
-      const rel = Math.atan2(Math.sin(boss.aAr - boss.aOr), Math.cos(boss.aAr - boss.aOr));
-      const future = Math.abs(Math.atan2(Math.sin(rel + lead), Math.cos(rel + lead)));
+      const rel = datan2(dsin(boss.aAr - boss.aOr), dcos(boss.aAr - boss.aOr));
+      const future = Math.abs(datan2(dsin(rel + lead), dcos(rel + lead)));
       void sepNow;
       const want = boss.seals.find((s) => !s.broken)?.id;
       const target = want === 'opp' ? Math.PI : want === 'conj' ? 0 : want === 'quad' ? Math.PI / 2 : -1;

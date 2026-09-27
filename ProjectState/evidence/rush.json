@@ -1,0 +1,42 @@
+{
+  "fights": [
+    {
+      "boss": "B01",
+      "seconds": 19.8
+    },
+    {
+      "boss": "B02",
+      "seconds": 13.9
+    },
+    {
+      "boss": "B03",
+      "seconds": 46.1
+    },
+    {
+      "boss": "B04",
+      "seconds": 24.5
+    },
+    {
+      "boss": "B05",
+      "seconds": 37.1
+    },
+    {
+      "boss": "B06",
+      "seconds": 16.5
+    },
+    {
+      "boss": "B07",
+      "seconds": 14.3
+    },
+    {
+      "boss": "B08",
+      "seconds": 29.1
+    },
+    {
+      "boss": "FINAL",
+      "seconds": 47.8
+    }
+  ],
+  "rushSeconds": 248.97,
+  "sumOfFights": 249.1
+}

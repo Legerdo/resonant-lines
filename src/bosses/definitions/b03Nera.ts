@@ -11,6 +11,7 @@ import type { Attack, Body, DeliveryInfo, Link, Needle, PulseResult } from '../.
 import type { RayHit } from '../../core/sim/bodies.ts';
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
+import { datan2, dcos, dsin } from '../../core/math/dmath.ts';
 
 export const NERA_SPOTS: readonly Vec[] = [
   { x: 96, y: 88 }, { x: 320, y: 88 }, { x: 72, y: 196 }, { x: 344, y: 196 }, { x: 208, y: 76 }, { x: 150, y: 222 },
@@ -114,7 +115,7 @@ export class NeraBoss implements BossController {
     }
     if (this.coreExposed) {
       this.swimA += (DT / NERA.swimPeriod) * Math.PI * 2;
-      tb.pos = { x: 208 + Math.cos(this.swimA) * NERA.swimR, y: 148 + Math.sin(this.swimA) * NERA.swimR * 0.8 };
+      tb.pos = { x: 208 + dcos(this.swimA) * NERA.swimR, y: 148 + dsin(this.swimA) * NERA.swimR * 0.8 };
     }
     switch (this.state) {
       case 'surface':
@@ -143,7 +144,7 @@ export class NeraBoss implements BossController {
         const f = live[this.beamIdx % live.length]!;
         this.beamIdx++;
         const d = sub(sim.player.pos, f.body.pos);
-        const ang = Math.atan2(d.y, d.x);
+        const ang = datan2(d.y, d.x);
         sim.spawnAttack({
           kind: 'beam', owner: f.body.id, sig: 'Heat', capturable: true, continuous: true, harmful: true,
           p: { x: f.body.pos.x, y: f.body.pos.y, ang, len: 260, w: 3, spin: 0, tele: NERA.beamTele, active: NERA.beamActive },
@@ -216,7 +217,7 @@ export class NeraBoss implements BossController {
   private reflect(sim: Sim, at: Vec): void {
     // mirror scales throw the energy back as a short beam toward the player
     const d = norm(sub(sim.player.pos, at));
-    sim.spawnAttack({ kind: 'beam', owner: 'reflect', sig: null, harmful: true, p: { x: at.x, y: at.y, ang: Math.atan2(d.y, d.x), len: 160, w: 2, spin: 0, tele: 0.35, active: 0.3 } });
+    sim.spawnAttack({ kind: 'beam', owner: 'reflect', sig: null, harmful: true, p: { x: at.x, y: at.y, ang: datan2(d.y, d.x), len: 160, w: 2, spin: 0, tele: 0.35, active: 0.3 } });
     sim.emit({ type: 'sealRejected', id: 'scale', pos: at, text: 'reflect' });
   }
 
@@ -232,7 +233,7 @@ export class NeraBoss implements BossController {
     }
     const tb = this.trueFig;
     tb.body.shapes[0]!.tag = 'NonAnchorable';
-    this.swimA = Math.atan2(tb.body.pos.y - 148, tb.body.pos.x - 208);
+    this.swimA = datan2(tb.body.pos.y - 148, tb.body.pos.x - 208);
   }
 
   updateDefeated(sim: Sim): void {

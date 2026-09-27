@@ -11,6 +11,7 @@ import type { Attack, Body, DeliveryInfo, Link, PulseResult } from '../../core/s
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
 import { applyCapture } from '../../resonance/link.ts';
+import { datan2, dcos, dsin } from '../../core/math/dmath.ts';
 
 export const MORA = {
   pos: { x: 208, y: 70 },
@@ -104,12 +105,12 @@ export class MoraBoss implements BossController {
       const rest = MORA.armRest[i]!;
       switch (arm.state) {
         case 'rest':
-          arm.body.pos = { x: rest.x, y: rest.y + Math.sin(this.t * 2 + i) * 1.5 };
+          arm.body.pos = { x: rest.x, y: rest.y + dsin(this.t * 2 + i) * 1.5 };
           break;
         case 'raise': {
           const k = Math.min(1, arm.t / MORA.raise);
           const p = lerp(arm.from, arm.target, k);
-          arm.body.pos = { x: p.x, y: p.y - Math.sin(k * Math.PI) * 26 - k * 8 };
+          arm.body.pos = { x: p.x, y: p.y - dsin(k * Math.PI) * 26 - k * 8 };
           if (arm.t >= MORA.raise) {
             arm.state = 'slam';
             arm.t = 0;
@@ -150,8 +151,8 @@ export class MoraBoss implements BossController {
       if (this.actions % 4 === 0) {
         const d = norm(sub(sim.player.pos, this.core.pos));
         for (let k = -2; k <= 2; k++) {
-          const a = Math.atan2(d.y, d.x) + k * 0.22;
-          sim.spawnAttack({ kind: 'projectile', owner: 'mora', harmful: true, p: { x: this.core.pos.x, y: this.core.pos.y + 16, vx: Math.cos(a) * 130, vy: Math.sin(a) * 130, r: 3, range: 300 } });
+          const a = datan2(d.y, d.x) + k * 0.22;
+          sim.spawnAttack({ kind: 'projectile', owner: 'mora', harmful: true, p: { x: this.core.pos.x, y: this.core.pos.y + 16, vx: dcos(a) * 130, vy: dsin(a) * 130, r: 3, range: 300 } });
         }
       } else {
         const i = this.pickArm(sim);
@@ -192,7 +193,7 @@ export class MoraBoss implements BossController {
   }
 
   private startSweep(sim: Sim): void {
-    this.sweep = sim.spawnAttack({ kind: 'custom', owner: 'mora', harmful: true, p: { tele: 0.8, ang: Math.atan2(sim.player.pos.y - this.core.pos.y, sim.player.pos.x - this.core.pos.x) - 1.2, noGeneric: 0 } });
+    this.sweep = sim.spawnAttack({ kind: 'custom', owner: 'mora', harmful: true, p: { tele: 0.8, ang: datan2(sim.player.pos.y - this.core.pos.y, sim.player.pos.x - this.core.pos.x) - 1.2, noGeneric: 0 } });
     this.sweep.kind = 'sweep';
     sim.record('B04 sweep');
   }
@@ -201,8 +202,8 @@ export class MoraBoss implements BossController {
     const a = this.sweep!;
     const c = this.core.pos;
     const ang = a.p.ang! + (a.phase === 'active' ? a.t * 2.4 : 0);
-    const inner = add(c, { x: Math.cos(ang) * 30, y: Math.sin(ang) * 30 });
-    const outer = add(c, { x: Math.cos(ang) * 104, y: Math.sin(ang) * 104 });
+    const inner = add(c, { x: dcos(ang) * 30, y: dsin(ang) * 30 });
+    const outer = add(c, { x: dcos(ang) * 104, y: dsin(ang) * 104 });
     if (a.phase === 'telegraph') {
       a.tele = { kind: 'capsule', a: inner, b: outer, r: 1 };
       if (a.t >= a.p.tele!) {

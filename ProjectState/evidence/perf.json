@@ -1,0 +1,25 @@
+{
+  "note": "headless Chromium + SwiftShader (CPU rasteriser); frameTime = App.frame() CPU time (sim+render submit)",
+  "before": {
+    "display": 23,
+    "dom": 68,
+    "heapMB": 42.1
+  },
+  "after50Resets": {
+    "display": 23,
+    "dom": 68,
+    "heapMB": 42.1,
+    "maxDisplay": 23
+  },
+  "fight1080p": {
+    "avg": 0.3484999999590218,
+    "p99": 1.0999999977648258,
+    "fps": 60.00425836672286,
+    "zoom": 3,
+    "counts": {
+      "attacks": 2,
+      "pulses": 0,
+      "bodies": 2
+    }
+  }
+}

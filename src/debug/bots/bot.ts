@@ -4,6 +4,7 @@ import { emptyInput, type InputFrame, type NeedleId } from '../../core/sim/types
 import type { Sim } from '../../core/sim/sim.ts';
 import type { Vec } from '../../core/math/vec.ts';
 import { isEmbedded } from '../../resonance/needle.ts';
+import { dhypot } from '../../core/math/dmath.ts';
 
 export type Task = (sim: Sim, f: InputFrame, bot: ScriptBot) => boolean;
 
@@ -40,13 +41,13 @@ export class ScriptBot {
   }
 }
 
-export const dist = (a: Vec, b: Vec): number => Math.hypot(a.x - b.x, a.y - b.y);
+export const dist = (a: Vec, b: Vec): number => dhypot(a.x - b.x, a.y - b.y);
 
 export function steer(sim: Sim, f: InputFrame, target: Vec, tol = 2.5): boolean {
   const p = sim.player.pos;
   const dx = target.x - p.x;
   const dy = target.y - p.y;
-  const d = Math.hypot(dx, dy);
+  const d = dhypot(dx, dy);
   if (d <= tol) return true;
   const k = d < 6 ? d / 6 : 1;
   f.move = { x: (dx / d) * k, y: (dy / d) * k };

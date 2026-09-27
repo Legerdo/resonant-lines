@@ -11,7 +11,6 @@ const STATE_KEY: Record<string, string> = {
   Held: '손', Flying: '비행', EmbeddedWorld: '고정', EmbeddedBoss: '부착', Disabled: '무력', Returning: '회수',
 };
 const LINK_KEY: Record<string, string> = { Idle: 'combat.idle', Charging: 'combat.charging', Charged: 'combat.charged', Overloaded: 'combat.overloaded', Broken: 'combat.broken' };
-const SIG_ICON: Record<string, string> = { Impact: 'sigImpact', Wave: 'sigWave', Heat: 'sigHeat', Void: 'sigVoid', Rotational: 'sigRotational' };
 
 export class Hud {
   readonly root = el('div', 'hud');
@@ -20,6 +19,7 @@ export class Hud {
   private shieldLabel = el('span', 'label');
   private boss = el('div', 'hud-boss');
   private bossName = el('div', 'name');
+  private bossProgress = el('div', 'progress');
   private seals = el('div', 'seals');
   private needles = el('div', 'hud-needles');
   private needleEls: { box: HTMLDivElement; ic: HTMLSpanElement; st: HTMLSpanElement }[] = [];
@@ -37,7 +37,7 @@ export class Hud {
       this.shield.appendChild(s);
     }
     this.shield.appendChild(this.shieldLabel);
-    this.boss.append(this.bossName, this.seals);
+    this.boss.append(this.bossName, this.bossProgress, this.seals);
     for (const id of ['A', 'B', 'C']) {
       const box = el('div', 'hud-needle');
       const ic = icon('needle');
@@ -61,9 +61,14 @@ export class Hud {
     this.root.append(this.shield, this.boss, this.needles, this.links, this.pulse, this.time, this.area);
   }
 
+  /** area title card: shown on entry, then fades so it never sits on top of a door or gate for long */
   setArea(name: string): void {
     this.area.textContent = name;
+    this.area.classList.remove('fade');
+    if (this.areaTimer) clearTimeout(this.areaTimer);
+    if (name) this.areaTimer = setTimeout(() => this.area.classList.add('fade'), 3200);
   }
+  private areaTimer: ReturnType<typeof setTimeout> | null = null;
 
   update(sim: Sim): void {
     const p = sim.player;
@@ -88,6 +93,8 @@ export class Hud {
     this.boss.classList.toggle('hidden', !sim.boss);
     if (sim.boss) {
       this.bossName.textContent = t(`boss.${sim.boss.id}`);
+      const remaining = sim.boss.seals.filter((s) => !s.broken && !s.optional).length;
+      this.bossProgress.textContent = sim.boss.coreExposed ? t('boss.lastHit') : t('boss.sealsRemaining', { n: remaining });
       while (this.seals.children.length < sim.boss.seals.length + 1) this.seals.appendChild(icon('seal'));
       sim.boss.seals.forEach((s, i) => setIcon(this.seals.children[i] as HTMLElement, s.broken ? 'sealBroken' : 'seal'));
       const core = this.seals.children[sim.boss.seals.length] as HTMLElement;
@@ -106,13 +113,11 @@ export class Hud {
     // links
     sim.links.forEach((l, i) => {
       const e = this.linkEls[i]!;
-      const charged = l.state === 'Charged' || l.state === 'Overloaded';
       e.box.classList.toggle('on', l.valid);
       e.box.classList.toggle('charged', l.valid && l.state === 'Charged');
       e.box.classList.toggle('over', l.valid && l.state === 'Overloaded');
-      setIcon(e.ic, charged && l.sig ? SIG_ICON[l.sig]! : 'link');
-      const tone = l.sig === 'Wave' && l.tone >= 0 ? ['·저', '·중', '·고'][l.tone] ?? '' : '';
-      e.txt.textContent = `${l.id} ${l.valid ? t(LINK_KEY[l.state]!) + (charged && l.sig ? ` ${t(`sig.${l.sig}`)}${tone}` : '') : l.state === 'Broken' ? t('combat.broken') : ''}`;
+      setIcon(e.ic, 'link');
+      e.txt.textContent = `${l.id} ${l.valid ? t(LINK_KEY[l.state]!) : l.state === 'Broken' ? t('combat.broken') : ''}`;
       e.box.dataset.state = l.valid ? l.state : 'off';
     });
     // pulse

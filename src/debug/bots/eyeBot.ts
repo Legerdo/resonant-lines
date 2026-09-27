@@ -2,7 +2,7 @@
 import { emptyInput, type InputFrame, type NeedleId } from '../../core/sim/types.ts';
 import type { Sim } from '../../core/sim/sim.ts';
 import type { Vec } from '../../core/math/vec.ts';
-import { Placer, survive, steerTo, lurePoint } from './botKit.ts';
+import { Placer, survive, steerTo, lurePoint, dodgeShots } from './botKit.ts';
 import type { EyeBoss } from '../../bosses/definitions/b05Eye.ts';
 import type { AnyBot } from './index.ts';
 
@@ -64,6 +64,8 @@ export class EyeBot implements AnyBot {
       f.pulse = true;
       f.fire = false;
     }
+    // the eye's jets are aimed shots: step off their line early (the jet still crosses the raft line behind us)
+    dodgeShots(sim, f);
     survive(sim, f);
     f.aim = { ...this.placer.aim };
     return f;

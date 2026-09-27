@@ -1,0 +1,44 @@
+{
+  "retryMs": 879,
+  "deathCardMs": 808,
+  "fightSeconds": 19.83333333333349,
+  "trace": [
+    "411:seal sealN",
+    "411:phase cracked",
+    "411:deliver B->A p:sealN success",
+    "650:seal sealW",
+    "650:phase fractured",
+    "650:deliver A->B p:sealW success",
+    "882:seal sealE",
+    "882:coreExposed",
+    "882:phase exposed",
+    "882:deliver A->C p:sealE success",
+    "1208:phase pinned",
+    "1255:deliver A->B gram:socket success",
+    "1255:victory"
+  ],
+  "save": {
+    "completed": [
+      "B01"
+    ],
+    "discovered": [
+      "B01"
+    ],
+    "tunings": [
+      "elasticNeedle"
+    ],
+    "equipped": [],
+    "finalGate": false,
+    "ending": false,
+    "flags": [
+      "tutorialDone"
+    ],
+    "best": {
+      "B01": 19.83
+    },
+    "deaths": {
+      "B01": 1
+    },
+    "fullClear": null
+  }
+}

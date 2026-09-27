@@ -81,9 +81,9 @@ export class WorldRenderer {
     if (this.scene.textures.exists(this.areaKey)) this.scene.textures.remove(this.areaKey);
     const tileKey = regionTileKey(def.region);
     const src = this.scene.textures.get(tileKey).getSourceImage() as HTMLImageElement;
-    const canvas = composeArea(def, src, decor);
-    this.scene.textures.addCanvas(key, canvas);
-    this.bg = this.scene.add.image(0, 0, key).setOrigin(0, 0).setDepth(0);
+    const composed = composeArea(def, src, decor, { w: VIEW_W, h: VIEW_H });
+    this.scene.textures.addCanvas(key, composed.canvas);
+    this.bg = this.scene.add.image(composed.ox, composed.oy, key).setOrigin(0, 0).setDepth(0);
     this.areaKey = key;
   }
 
@@ -127,13 +127,14 @@ export class WorldRenderer {
     if (sim) {
       const ctx: ViewCtx = { scene: this.scene, assets: this.assets, pool: this.pool, under: this.under, over: this.over, sim, time: this.time, frame: this.frame, opts };
       drawProps(ctx);
+      if (sim.area.id === 'hub' && sim.flags.has('heartRestarted')) this.drawHeartbeat();
       if (sim.boss) BOSS_VIEWS[sim.boss.id]?.(ctx);
       for (const a of sim.attacks) drawAttack(this.under, this.over, a, opts);
       drawLinks(this.over, sim, opts);
       drawPulses(this.over, sim, opts);
       drawPulsePreview(this.over, sim, opts);
       this.drawNeedles(sim);
-      if (!this.hidePlayer) this.drawPlayer(sim);
+      if (!this.hidePlayer) this.drawPlayer(sim, settings.flash);
       if (settings.debug.any) drawDebug(this.dbg, sim, settings.debug);
     }
     this.drawBursts();
@@ -145,6 +146,18 @@ export class WorldRenderer {
     this.underTex.refresh();
     this.overTex.refresh();
     this.dbgTex.refresh();
+  }
+
+  /** after the ending the sealed heart beats again: a lub-dub pair of rings from the central dais every 1.6s */
+  private drawHeartbeat(): void {
+    const c = { x: 320, y: 214 };
+    const period = 1.6;
+    for (const lag of [0, 0.22]) {
+      const t = (this.time - lag + period) % period;
+      if (t > 1.1) continue;
+      const r = 8 + t * 56;
+      this.under.ring(c.x, c.y, r, t < 0.45 ? P.reso : P.resoDeep, t < 0.45 ? 0 : 3, Math.floor(r));
+    }
   }
 
   private drawNeedles(sim: Sim): void {
@@ -169,7 +182,7 @@ export class WorldRenderer {
     });
   }
 
-  private drawPlayer(sim: Sim): void {
+  private drawPlayer(sim: Sim, flashOk: boolean): void {
     const p = sim.player;
     const aimF = facingOf(p.aimDir);
     const moveF = facingOf(p.facing);
@@ -198,8 +211,10 @@ export class WorldRenderer {
     // afterimages during Thread Step / dash
     if (p.dash.active && this.frame % 3 === 0) this.vfx.ghosts.push({ x: p.pos.x, y: p.pos.y, frame, flip: false, life: 0.18 });
     for (const g of this.vfx.ghosts) this.pool.draw('player_ghost', g.frame, g.x, g.y, ySort(g.y) - 1);
-    const blink = p.invuln > 0 && !p.dead && Math.floor(this.time * 20) % 2 === 0;
-    const sheet = p.hitFlash > 0.18 && !p.dead ? 'player_flash' : 'player';
+    // i-frames: 10 Hz blink, or — with flashing effects off — a steady checker-dithered body (no strobe)
+    const invuln = p.invuln > 0 && !p.dead;
+    const blink = invuln && flashOk && Math.floor(this.time * 20) % 2 === 0;
+    const sheet = invuln && !flashOk ? 'player_ghost' : p.hitFlash > 0.18 && !p.dead && flashOk ? 'player_flash' : 'player';
     if (!blink) this.pool.draw(sheet, frame, p.pos.x, p.pos.y, ySort(p.pos.y));
     // aim reticle: 4 pixels on the aim ray (pixel layer, geometry only)
     if (!p.dead) {

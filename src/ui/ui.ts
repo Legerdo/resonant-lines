@@ -77,6 +77,12 @@ export class UI {
     this.screenEl.dataset.screen = name;
     this.screenEl.appendChild(content);
     this.focusIdx = 0;
+    // the pointer moves the menu focus, so hover and keyboard/gamepad focus are never two different highlighted items
+    this.buttons().forEach((b, i) => b.addEventListener('pointerenter', () => {
+      if (this.focusIdx === i) return;
+      this.focusIdx = i;
+      this.applyFocus();
+    }));
     this.applyFocus();
   }
 
@@ -90,7 +96,10 @@ export class UI {
   private applyFocus(): void {
     const bs = this.buttons();
     bs.forEach((b, i) => b.classList.toggle('focus', i === this.focusIdx));
-    bs[this.focusIdx]?.focus({ preventScroll: true });
+    const f = bs[this.focusIdx];
+    f?.focus({ preventScroll: true });
+    // panels that still scroll at 150% UI scale keep the keyboard/gamepad focus visible
+    f?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   /** keyboard / gamepad menu navigation. returns true if consumed */
@@ -218,9 +227,16 @@ export class UI {
   showSettings(from: ScreenName): void {
     this.back = from;
     const s = this.host.save().settings;
-    const box = el('div', 'panel px-frame interactive');
+    const box = el('div', 'panel px-frame interactive settings-panel');
     box.appendChild(el('h2', 'accent', t('settings.title')));
-    const grid = el('div', 'setting');
+    // three columns of compact rows: 소리 | 화면 + 조작 | 키 설정 — the whole screen fits the 640x360 frame at every UI scale;
+    // if a font ever makes it taller, only the column area scrolls (title and 뒤로 stay put, nothing overlaps)
+    const cols = el('div', 'settings-cols');
+    const colA = el('div', 'setting');
+    const colB = el('div', 'setting');
+    const colC = el('div', 'setting');
+    cols.append(colA, colB, colC);
+    let grid = colA;
     const slider = (label: string, get: () => number, set: (v: number) => void, min = 0, max = 1, step = 0.05) => {
       grid.appendChild(el('span', '', label));
       const r = el('input', 'slider interactive');
@@ -237,17 +253,22 @@ export class UI {
       grid.appendChild(r);
     };
     const toggle = (label: string, get: () => boolean, set: (v: boolean) => void, id: string) => {
-      const b = button({ label, value: get() ? t('settings.on') : t('settings.off'), id, action: () => {
+      const b = compact({ label, value: get() ? t('settings.on') : t('settings.off'), id, action: () => {
         set(!get());
         this.host.applySettings();
         (b.querySelector('.val') as HTMLElement).textContent = get() ? t('settings.on') : t('settings.off');
+        b.setAttribute('aria-pressed', String(get()));
       } });
+      b.setAttribute('aria-pressed', String(get()));
       grid.appendChild(b);
-      grid.appendChild(el('span'));
+    };
+    const compact = (it: MenuItem): HTMLButtonElement => {
+      const b = button(it);
+      b.classList.add('compact');
+      return b;
     };
     const vol = s.volume;
-    grid.appendChild(el('b', 'accent', t('settings.audio')));
-    grid.appendChild(el('span'));
+    grid.appendChild(el('b', 'accent section', t('settings.audio')));
     slider(t('settings.master'), () => vol.master, (v) => (vol.master = v));
     slider(t('settings.music'), () => vol.music, (v) => (vol.music = v));
     slider(t('settings.boss'), () => vol.boss, (v) => (vol.boss = v));
@@ -255,34 +276,35 @@ export class UI {
     slider(t('settings.impact'), () => vol.impact, (v) => (vol.impact = v));
     slider(t('settings.environment'), () => vol.environment, (v) => (vol.environment = v));
     slider(t('settings.ui'), () => vol.ui, (v) => (vol.ui = v));
-    grid.appendChild(el('b', 'accent', t('settings.display')));
-    grid.appendChild(el('span'));
-    const scaleBtn = button({ label: t('settings.uiScale'), value: `${Math.round(s.uiScale * 100)}%`, id: 'uiScale', action: () => {
+    grid = colB;
+    grid.appendChild(el('b', 'accent section', t('settings.display')));
+    const scaleBtn = compact({ label: t('settings.uiScale'), value: `${Math.round(s.uiScale * 100)}%`, id: 'uiScale', action: () => {
       s.uiScale = s.uiScale === 1 ? 1.25 : s.uiScale === 1.25 ? 1.5 : 1;
       this.host.applySettings();
       (scaleBtn.querySelector('.val') as HTMLElement).textContent = `${Math.round(s.uiScale * 100)}%`;
     } });
-    grid.append(scaleBtn, el('span'));
+    grid.append(scaleBtn);
     slider(t('settings.shake'), () => s.shake, (v) => (s.shake = v));
     toggle(t('settings.flash'), () => s.flash, (v) => (s.flash = v), 'flash');
     toggle(t('settings.highContrast'), () => s.highContrast, (v) => (s.highContrast = v), 'contrast');
     toggle(t('settings.slowMode'), () => s.slowMode, (v) => (s.slowMode = v), 'slow');
-    grid.append(button({ label: t('settings.fullscreen'), id: 'fullscreen', action: () => this.host.toggleFullscreen() }), el('span'));
-    grid.appendChild(el('b', 'accent', t('settings.controls')));
-    grid.appendChild(el('span'));
+    grid.append(compact({ label: t('settings.fullscreen'), id: 'fullscreen', action: () => this.host.toggleFullscreen() }));
+    grid.appendChild(el('b', 'accent section', t('settings.controls')));
     slider(t('settings.aimSensitivity'), () => s.aimSensitivity, (v) => (s.aimSensitivity = v), 0.5, 2, 0.1);
     slider(t('settings.deadzone'), () => s.deadzone, (v) => (s.deadzone = v), 0.05, 0.5, 0.01);
     toggle(t('settings.vibration'), () => s.vibration, (v) => (s.vibration = v), 'vibration');
+    grid = colC;
+    grid.appendChild(el('b', 'accent section', t('settings.keys')));
     const binds = this.host.save().bindings;
     for (const a of ACTIONS) {
-      const b = button({ label: t(`action.${a}`), value: binds[a].map(keyName).join(' / '), id: `bind-${a}`, action: () => {
+      const b = compact({ label: t(`action.${a}`), value: binds[a].map(keyName).join(' / '), id: `bind-${a}`, action: () => {
         this.rebinding = a;
         (b.querySelector('.val') as HTMLElement).textContent = t('settings.pressKey');
       } });
-      grid.append(b, el('span'));
+      grid.append(b);
     }
-    grid.append(button({ label: t('settings.resetKeys'), id: 'resetKeys', action: () => { this.host.resetBindings(); this.showSettings(from); } }), el('span'));
-    box.appendChild(grid);
+    grid.append(compact({ label: t('settings.resetKeys'), id: 'resetKeys', action: () => { this.host.resetBindings(); this.showSettings(from); } }));
+    box.appendChild(cols);
     box.appendChild(button({ label: t('menu.back'), id: 'back', action: () => this.goBack() }));
     this.show('settings', box);
   }

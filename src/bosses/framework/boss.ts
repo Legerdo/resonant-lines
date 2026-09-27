@@ -39,6 +39,8 @@ export interface BossController {
   /** add bodies (boss parts, arena mechanisms). Called once from the Sim constructor. */
   setup(sim: Sim): void;
   update(sim: Sim): void;
+  /** Story combat advances one seal per successful counter, independent of signal type or target. */
+  onSimpleProgress?(sim: Sim, brokenSeals: number): void;
   /** after victory, animate the defeat (no attacks) */
   updateDefeated?(sim: Sim): void;
   onPulseDelivered?(sim: Sim, d: DeliveryInfo): PulseResult | undefined;

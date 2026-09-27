@@ -12,6 +12,7 @@ import type { Attack, Body, DeliveryInfo, PulseResult } from '../../core/sim/typ
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
 import { applyCapture } from '../../resonance/link.ts';
+import { datan2, dcos, dsin } from '../../core/math/dmath.ts';
 
 export const ORBIT = {
   center: { x: 208, y: 150 },
@@ -25,7 +26,7 @@ export const ORBIT = {
   merge: 22,
 };
 
-const wrap = (a: number): number => Math.atan2(Math.sin(a), Math.cos(a));
+const wrap = (a: number): number => datan2(dsin(a), dcos(a));
 
 export class OrbitBoss implements BossController {
   readonly id = 'B07';
@@ -56,7 +57,7 @@ export class OrbitBoss implements BossController {
   }
 
   private posAt(a: number, r: number): Vec {
-    return { x: ORBIT.center.x + Math.cos(a) * r, y: ORBIT.center.y + Math.sin(a) * r * 0.82 };
+    return { x: ORBIT.center.x + dcos(a) * r, y: ORBIT.center.y + dsin(a) * r * 0.82 };
   }
 
   /** angular separation seen from the pedestal, in [0, PI] */
@@ -110,16 +111,16 @@ export class OrbitBoss implements BossController {
       this.flareT = ORBIT.flareEvery;
       const d = norm(sub(sim.player.pos, this.ar.pos));
       for (let k = -1; k <= 1; k++) {
-        const a = Math.atan2(d.y, d.x) + k * 0.26;
-        sim.spawnAttack({ kind: 'projectile', owner: 'ar', harmful: true, p: { x: this.ar.pos.x, y: this.ar.pos.y, vx: Math.cos(a) * 140, vy: Math.sin(a) * 140, r: 3, range: 300 } });
+        const a = datan2(d.y, d.x) + k * 0.26;
+        sim.spawnAttack({ kind: 'projectile', owner: 'ar', harmful: true, p: { x: this.ar.pos.x, y: this.ar.pos.y, vx: dcos(a) * 140, vy: dsin(a) * 140, r: 3, range: 300 } });
       }
     }
     // moon blade (after the first seal): a Rotational edge circling Or — also catchable
     if (this.seals[0]!.broken) {
       this.bladeA += DT * 3.2;
       const o = this.or.pos;
-      const a = { x: o.x + Math.cos(this.bladeA) * 12, y: o.y + Math.sin(this.bladeA) * 12 };
-      const b = { x: o.x + Math.cos(this.bladeA) * (12 + ORBIT.bladeLen), y: o.y + Math.sin(this.bladeA) * (12 + ORBIT.bladeLen) };
+      const a = { x: o.x + dcos(this.bladeA) * 12, y: o.y + dsin(this.bladeA) * 12 };
+      const b = { x: o.x + dcos(this.bladeA) * (12 + ORBIT.bladeLen), y: o.y + dsin(this.bladeA) * (12 + ORBIT.bladeLen) };
       if (!this.blade || this.blade.phase === 'done') {
         this.blade = sim.spawnAttack({ kind: 'blade', owner: 'or', sig: 'Rotational', capturable: true, harmful: true, phase: 'active', shape: { kind: 'capsule', a, b, r: 3 } });
       } else this.blade.shape = { kind: 'capsule', a, b, r: 3 };

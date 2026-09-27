@@ -9,6 +9,7 @@ import { makeBody, circle } from '../../core/sim/bodies.ts';
 import type { Body, DeliveryInfo, PulseResult } from '../../core/sim/types.ts';
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
+import { datan2, dcos, dsin } from '../../core/math/dmath.ts';
 
 type State = 'drift' | 'inhale' | 'fan' | 'recover' | 'drop';
 
@@ -87,7 +88,7 @@ export class HummingBoss implements BossController {
     // slow hovering drift (the bell never charges; its danger is sound)
     const c = HUM.center;
     const amp = this.coreExposed ? 10 : 22;
-    this.body.pos = { x: c.x + Math.sin(this.age * 0.45) * amp, y: c.y + Math.sin(this.age * 0.31) * (amp * 0.5) };
+    this.body.pos = { x: c.x + dsin(this.age * 0.45) * amp, y: c.y + dsin(this.age * 0.31) * (amp * 0.5) };
     if (this.coreExposed) this.updateClapper(sim);
 
     switch (this.state) {
@@ -123,7 +124,7 @@ export class HummingBoss implements BossController {
         // three short arcs along ONE direction chosen at the start (readable: step out of the cone)
         if (this.t <= DT) {
           const d = norm(sub(sim.player.pos, this.body.pos));
-          this.fanAng = Math.atan2(d.y, d.x);
+          this.fanAng = datan2(d.y, d.x);
         }
         const shots = [0.6, 0.9, 1.2];
         for (const s of shots) {
@@ -146,10 +147,10 @@ export class HummingBoss implements BossController {
 
   private updateClapper(sim: Sim): void {
     this.exposedT += DT;
-    const a = Math.sin((this.exposedT / HUM.swingPeriod) * Math.PI * 2) * 1.05;
+    const a = dsin((this.exposedT / HUM.swingPeriod) * Math.PI * 2) * 1.05;
     const b = this.body.pos;
     this.clapper.enabled = true;
-    this.clapper.pos = { x: b.x + Math.sin(a) * HUM.clapLen, y: b.y + 8 + Math.cos(a) * HUM.clapLen * 0.62 };
+    this.clapper.pos = { x: b.x + dsin(a) * HUM.clapLen, y: b.y + 8 + dcos(a) * HUM.clapLen * 0.62 };
     const glow = this.exposedT % HUM.glowCycle < HUM.glowOn;
     const s = this.clapper.shapes[0]!;
     if (s.enabled !== glow) sim.record(`B02 clapper ${glow ? 'glow' : 'dim'}`);

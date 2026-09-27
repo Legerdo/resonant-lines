@@ -50,7 +50,7 @@ registerBossView('B02', (ctx: ViewCtx) => {
   // floating: dithered shadow far below the bell
   ctx.under.disc(px, body.y + 30, 14, P.night, 1, 0);
   const img = ctx.pool.draw('boss_hum', `${v.pose}${idx}`, px, py, ySort(body.y + 20));
-  if (img && v.flash > 0) img.setVisible(ctx.frame % 2 === 0);
+  if (img && v.flash > 0 && ctx.opts.flash) img.setVisible(ctx.frame % 2 === 0);
   const pitch = v.parts.pitch;
   if (pitch?.on && ctx.sim.fight?.result === 'ongoing') pitchGlyph(ctx, pitch.x, pitch.y - 4, pitch.f ?? 0);
   const clap = v.parts.clapper;

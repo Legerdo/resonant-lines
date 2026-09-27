@@ -11,6 +11,7 @@ import { makeBody, circle } from '../../core/sim/bodies.ts';
 import type { Body, DeliveryInfo, PulseResult } from '../../core/sim/types.ts';
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
+import { datan2, dcos, dsin } from '../../core/math/dmath.ts';
 
 export const STAR = {
   center: { x: 208, y: 146 },
@@ -60,7 +61,7 @@ export class StarBoss implements BossController {
     const terms = [];
     for (let i = 0; i < 6; i++) {
       const a = (i / 6) * Math.PI * 2;
-      terms.push(circle(`ring:t${i}`, { x: Math.cos(a) * STAR.ringR, y: Math.sin(a) * STAR.ringR * 0.8 }, 6, 'MovingAnchor', { blocksMove: false, receiver: `t${i}` }));
+      terms.push(circle(`ring:t${i}`, { x: dcos(a) * STAR.ringR, y: dsin(a) * STAR.ringR * 0.8 }, 6, 'MovingAnchor', { blocksMove: false, receiver: `t${i}` }));
     }
     this.ring = sim.addBody(makeBody('ring', 'mechanism', copy(STAR.center), terms));
     for (let i = 0; i < 3; i++) {
@@ -75,7 +76,7 @@ export class StarBoss implements BossController {
 
   private ringPos(i: number): Vec {
     const a = (i / 6) * Math.PI * 2 + this.ringA;
-    return { x: STAR.center.x + Math.cos(a) * STAR.ringR, y: STAR.center.y + Math.sin(a) * STAR.ringR * 0.8 };
+    return { x: STAR.center.x + dcos(a) * STAR.ringR, y: STAR.center.y + dsin(a) * STAR.ringR * 0.8 };
   }
 
   update(sim: Sim): void {
@@ -98,7 +99,7 @@ export class StarBoss implements BossController {
       this.beamT -= DT;
       if (this.beamT <= 0) {
         this.beamT = STAR.beamEvery;
-        const base = Math.atan2(sim.player.pos.y - STAR.center.y, sim.player.pos.x - STAR.center.x) + Math.PI * 0.5;
+        const base = datan2(sim.player.pos.y - STAR.center.y, sim.player.pos.x - STAR.center.x) + Math.PI * 0.5;
         for (const off of [0, Math.PI]) {
           sim.spawnAttack({ kind: 'beam', owner: 'star', sig: 'Heat', capturable: true, continuous: true, harmful: true, p: { x: STAR.center.x, y: STAR.center.y, ang: base + off, len: 150, w: 3, spin: 0.55, tele: 0.8, active: 3.0 } });
         }
@@ -119,7 +120,7 @@ export class StarBoss implements BossController {
       this.beamT -= DT;
       if (this.beamT <= 0) {
         this.beamT = STAR.beamEvery + 1;
-        const a = Math.atan2(sim.player.pos.y - STAR.center.y, sim.player.pos.x - STAR.center.x) + 0.9;
+        const a = datan2(sim.player.pos.y - STAR.center.y, sim.player.pos.x - STAR.center.x) + 0.9;
         sim.spawnAttack({ kind: 'beam', owner: 'star', sig: 'Heat', capturable: true, continuous: true, harmful: true, p: { x: STAR.center.x, y: STAR.center.y, ang: a, len: 170, w: 3, spin: -0.5, tele: 0.8, active: 2.6 } });
       }
     } else {
@@ -127,7 +128,7 @@ export class StarBoss implements BossController {
       this.debA += STAR.debrisSpin * DT;
       this.debris.forEach((d, i) => {
         const a = this.debA + (i / 3) * Math.PI * 2;
-        d.pos = { x: STAR.center.x + Math.cos(a) * STAR.debrisR, y: STAR.center.y + Math.sin(a) * STAR.debrisR * 0.8 };
+        d.pos = { x: STAR.center.x + dcos(a) * STAR.debrisR, y: STAR.center.y + dsin(a) * STAR.debrisR * 0.8 };
         const on = (this.t + i * 1.0) % STAR.glowCycle < STAR.glowOn;
         d.shapes[0]!.enabled = on;
       });
@@ -137,7 +138,7 @@ export class StarBoss implements BossController {
       if (vis) {
         const k = Math.floor(this.shardT / 7);
         const a = k * 2.1 + 0.6;
-        this.shard.pos = { x: STAR.center.x + Math.cos(a) * 110, y: STAR.center.y + Math.sin(a) * 80 };
+        this.shard.pos = { x: STAR.center.x + dcos(a) * 110, y: STAR.center.y + dsin(a) * 80 };
       }
       this.ringT -= DT;
       if (this.ringT <= 0) {
@@ -145,12 +146,21 @@ export class StarBoss implements BossController {
         sim.spawnAttack({ kind: 'ring', owner: 'star', sig: 'Wave', capturable: true, harmful: true, p: { x: STAR.center.x, y: STAR.center.y, r: 22, speed: 120, rMax: 205, th: 7, tele: 0.5 } });
         const d = norm(sub(sim.player.pos, STAR.center));
         for (let k = -1; k <= 1; k++) {
-          const a = Math.atan2(d.y, d.x) + k * 0.3;
-          sim.spawnAttack({ kind: 'projectile', owner: 'star', harmful: true, p: { x: STAR.center.x, y: STAR.center.y, vx: Math.cos(a) * 140, vy: Math.sin(a) * 140, r: 3, range: 300 } });
+          const a = datan2(d.y, d.x) + k * 0.3;
+          sim.spawnAttack({ kind: 'projectile', owner: 'star', harmful: true, p: { x: STAR.center.x, y: STAR.center.y, vx: dcos(a) * 140, vy: dsin(a) * 140, r: 3, range: 300 } });
         }
       }
     }
     this.syncView(sim);
+  }
+
+  onSimpleProgress(sim: Sim, brokenSeals: number): void {
+    if (this.stage === 'A' && brokenSeals >= this.restored.length) {
+      this.restored = [true, true, true];
+      this.enterB(sim);
+    } else if (this.stage === 'B' && this.coreExposed) {
+      this.enterSimpleC(sim);
+    }
   }
 
   private enterB(sim: Sim): void {
@@ -176,6 +186,17 @@ export class StarBoss implements BossController {
     this.t = 0;
     this.ringT = 1.2;
     sim.emit({ type: 'shake', value: 6 });
+  }
+
+  /** Keep the fixed arena anchors in the simplified finale so the player can repeat the same counter loop. */
+  private enterSimpleC(sim: Sim): void {
+    this.stage = 'C';
+    sim.setBossPhase('C');
+    sim.invertedLinks = new Set();
+    this.star.shapes[1]!.enabled = true;
+    this.star.shapes[2]!.enabled = true;
+    this.t = 0;
+    this.ringT = 1.2;
   }
 
   onPulseDelivered(sim: Sim, d: DeliveryInfo): PulseResult | undefined {
@@ -235,7 +256,7 @@ export class StarBoss implements BossController {
     v.parts.star = { x: this.star.pos.x, y: this.star.pos.y, f: ['A', 'B', 'C'].indexOf(this.stage) };
     for (let i = 0; i < 6; i++) {
       const p = this.ringPos(i);
-      v.parts[`t${i}`] = { x: p.x, y: p.y, on: this.stage === 'A' || this.stage === 'B', f: this.restored[Math.floor(i / 2)] ? 1 : 0 };
+      v.parts[`t${i}`] = { x: p.x, y: p.y, on: this.ring.enabled, f: this.restored[Math.floor(i / 2)] ? 1 : 0 };
     }
     this.debris.forEach((d, i) => (v.parts[`debris${i}`] = { x: d.pos.x, y: d.pos.y, on: d.enabled, f: d.shapes[0]!.enabled ? 1 : 0 }));
     v.parts.shard = { x: this.shard.pos.x, y: this.shard.pos.y, on: this.shard.enabled };

@@ -8,7 +8,8 @@ const id = process.argv[2] ?? 'B01';
 const invuln = process.argv.includes('invuln');
 const e = bossEntry(id)!;
 const sim = new Sim({ area: areaById(e.areaId)!, seed: 0x5eed + id.charCodeAt(1), boss: e.create(), invulnerable: invuln });
-const bot = BOTS[id]!();
+const botName = process.argv.find((a) => a.startsWith('--bot='))?.slice(6) ?? id;
+const bot = BOTS[botName]!();
 let i = 0;
 for (; i < 60 * 300; i++) {
   const f = bot.next(sim);

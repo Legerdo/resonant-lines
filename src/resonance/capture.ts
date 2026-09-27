@@ -1,4 +1,4 @@
-// Signature capture (LOCKED-R03): only attacks whose real geometry crosses a live link charge it (provenance per attack).
+// A boss's harmful attack crossing a live link always gives one stable charge. World emitters retain their signature rules.
 import { DT } from '../core/clock/fixedStep.ts';
 import { lerp } from '../core/math/vec.ts';
 import { CFG } from '../core/sim/config.ts';
@@ -27,12 +27,14 @@ export function updateCapture(sim: Sim): void {
   const tol = sim.mods.captureTolerance;
   for (const l of sim.links) {
     if (!l.valid || l.state === 'Broken') continue;
+    if (sim.boss && (l.state === 'Charged' || l.state === 'Overloaded')) continue;
     let continuousHit = false;
     for (const atk of sim.attacks) {
       if (atk.phase !== 'active' || !atk.shape) continue;
-      const custom = sim.boss?.onAttackLink?.(sim, atk, l);
+      const simpleBossRule = !!sim.boss;
+      const custom = simpleBossRule ? undefined : sim.boss?.onAttackLink?.(sim, atk, l);
       if (custom === 'ignore') continue;
-      const wantsCapture = custom === 'capture' || (custom === undefined && atk.capturable && atk.sig !== null);
+      const wantsCapture = custom === 'capture' || (custom === undefined && (simpleBossRule ? atk.harmful || atk.capturable : atk.capturable && atk.sig !== null));
       if (!wantsCapture && custom !== 'cut') continue;
       if (l.captured.includes(atk.id)) continue;
       if (l.echoT > 0 && custom !== 'cut') continue; // Echo tuning: the lingering line cannot take new energy
@@ -43,25 +45,27 @@ export function updateCapture(sim: Sim): void {
         breakLink(sim, l, atk.kind);
         break;
       }
-      if (atk.sig === null) continue;
-      if (atk.continuous) {
+      const sig = simpleBossRule ? 'Impact' : atk.sig;
+      if (sig === null) continue;
+      const tone = simpleBossRule ? -1 : atk.tone;
+      if (atk.continuous && !simpleBossRule) {
         continuousHit = true;
         if (l.state === 'Idle') {
           l.state = 'Charging';
           l.stateTick = sim.tick;
         }
-        l.chargingSig = atk.sig;
-        l.chargingTone = atk.tone;
+        l.chargingSig = sig;
+        l.chargingTone = tone;
         l.progress += DT / sim.mods.chargeTime;
         if (l.progress >= 1) {
           l.progress = 0;
           if (l.state === 'Charging') l.state = 'Idle';
           l.captured.push(atk.id);
-          applyCapture(sim, l, atk.sig, atk.tone, atk.id);
+          applyCapture(sim, l, sig, tone, atk.id, t);
         }
       } else {
         l.captured.push(atk.id);
-        applyCapture(sim, l, atk.sig, atk.tone, atk.id);
+        applyCapture(sim, l, sig, tone, atk.id, t);
       }
       if (l.captured.length > 64) l.captured.splice(0, l.captured.length - 64);
     }

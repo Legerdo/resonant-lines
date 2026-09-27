@@ -12,6 +12,7 @@ import type { Attack, Body, DeliveryInfo, Link, Needle, PulseResult } from '../.
 import type { Sim } from '../../core/sim/sim.ts';
 import { type BossController, makeSeals, newView } from '../framework/boss.ts';
 import { isEmbedded } from '../../resonance/needle.ts';
+import { datan2, dcos, dsin } from '../../core/math/dmath.ts';
 
 type State = 'burrow' | 'tele' | 'surface' | 'jam';
 
@@ -23,7 +24,7 @@ export const BRAK = {
   tele: 0.9,
   surface: 1.5,
   quakeEvery: 2.8,
-  alignCos: Math.cos((22 * Math.PI) / 180),
+  alignCos: dcos((22 * Math.PI) / 180),
 };
 
 export class BrakBoss implements BossController {
@@ -109,7 +110,7 @@ export class BrakBoss implements BossController {
         if (this.seals[0]!.broken && !this.spitDone && this.t >= 0.25) {
           this.spitDone = true;
           const d = norm(sub(sim.player.pos, this.body.pos));
-          sim.spawnAttack({ kind: 'beam', owner: 'brak', sig: 'Heat', capturable: true, continuous: true, harmful: true, p: { x: this.body.pos.x, y: this.body.pos.y, ang: Math.atan2(d.y, d.x), len: 230, w: 3, spin: 0, tele: 0.55, active: 0.9, spit: 1 } });
+          sim.spawnAttack({ kind: 'beam', owner: 'brak', sig: 'Heat', capturable: true, continuous: true, harmful: true, p: { x: this.body.pos.x, y: this.body.pos.y, ang: datan2(d.y, d.x), len: 230, w: 3, spin: 0, tele: 0.55, active: 0.9, spit: 1 } });
         }
         if (this.t >= BRAK.surface + (this.spitDone ? 0.9 : 0)) {
           this.body.enabled = false;
@@ -164,7 +165,7 @@ export class BrakBoss implements BossController {
       if (!gutN) return undefined;
       const other = sim.needle(gutN === l.a ? l.b : l.a).pos;
       const dirLink = norm(sub(other, this.body.pos));
-      const dirBeam = { x: Math.cos(a.p.ang!), y: Math.sin(a.p.ang!) };
+      const dirBeam = { x: dcos(a.p.ang!), y: dsin(a.p.ang!) };
       return dot(dirLink, dirBeam) >= BRAK.alignCos ? ('capture' as const) : ('ignore' as const);
     }
     return undefined;
