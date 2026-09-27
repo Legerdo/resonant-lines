@@ -1,5 +1,88 @@
 import type { AreaDef } from '../areaTypes.ts';
 
+// B06 재굴착자 브락 — excavation floor. Four sandstone columns (anchorable), soft ground everywhere.
+export const ARENA_B06: AreaDef = {
+  id: 'arena_B06',
+  kind: 'arena',
+  region: 'quarry',
+  nameKey: 'boss.B06',
+  bossId: 'B06',
+  music: 'boss_brak',
+  tiles: [
+    '##########################',
+    '########AAAAAAAAAA########',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '########AAAAAAAAAA########',
+    '##########################',
+  ],
+  spawns: { default: { x: 208, y: 236 } },
+  props: [
+    { id: 'colNW', kind: 'post', pos: { x: 120, y: 110 }, r: 7, tag: 'Anchorable' },
+    { id: 'colNE', kind: 'post', pos: { x: 296, y: 110 }, r: 7, tag: 'Anchorable' },
+    { id: 'colSW', kind: 'post', pos: { x: 120, y: 200 }, r: 7, tag: 'Anchorable' },
+    { id: 'colSE', kind: 'post', pos: { x: 296, y: 200 }, r: 7, tag: 'Anchorable' },
+    { id: 'rb1', kind: 'rubble', pos: { x: 40, y: 48 }, variant: 0 },
+    { id: 'rb2', kind: 'rubble', pos: { x: 376, y: 244 }, variant: 1 },
+    { id: 'ash1', kind: 'ashDrift', pos: { x: 208, y: 60 } },
+  ],
+  exits: [],
+  interactables: [],
+};
+
+// B05 역조의 눈 — tidal basin. The eye sits in the north wall; three rafts drift on loops; two stone posts.
+export const ARENA_B05: AreaDef = {
+  id: 'arena_B05',
+  kind: 'arena',
+  region: 'marsh',
+  nameKey: 'boss.B05',
+  bossId: 'B05',
+  music: 'boss_eye',
+  tiles: [
+    '##########################',
+    '##########################',
+    '#,,,,................,,,,#',
+    '#,,....................,,#',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    '#........................#',
+    '#,.......................#',
+    '#,,,..................,,,#',
+    '#######AAAAAAAAAAAA#######',
+    '##########################',
+  ],
+  spawns: { default: { x: 208, y: 236 } },
+  props: [
+    { id: 'postW', kind: 'mirrorPost', pos: { x: 40, y: 150 }, r: 6, tag: 'Anchorable' },
+    { id: 'postE', kind: 'mirrorPost', pos: { x: 376, y: 150 }, r: 6, tag: 'Anchorable' },
+    { id: 'reedA', kind: 'reeds', pos: { x: 30, y: 44 } },
+    { id: 'reedB', kind: 'reeds', pos: { x: 386, y: 44 } },
+    { id: 'lil1', kind: 'lilies', pos: { x: 60, y: 240 } },
+    { id: 'lil2', kind: 'lilies', pos: { x: 350, y: 240 } },
+  ],
+  exits: [],
+  interactables: [],
+};
+
 // B04 뿌리기계 모라 — overgrown machine court. Four broken conduits (terminal pairs), Mora rooted at the north wall.
 const conduitProps = (): AreaDef['props'] => {
   const T: [string, number, number][] = [

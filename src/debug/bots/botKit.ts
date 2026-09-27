@@ -81,7 +81,7 @@ export function threat(sim: Sim, pos: Vec, margin = 10): { esc: Vec; urgent: boo
   let esc: Vec | null = null;
   let urgent = false;
   for (const a of sim.attacks) {
-    if (!a.harmful) continue;
+    if (!a.harmful || a.kind === 'front') continue;
     const s = a.phase === 'active' ? a.shape : a.phase === 'telegraph' ? a.tele : null;
     if (!s) continue;
     const before: Vec | null = esc;
@@ -132,6 +132,12 @@ export function frame(sim: Sim, aim: Vec): InputFrame {
 
 export const embeddedIn = (sim: Sim, id: NeedleId, shapeId: string): boolean => isEmbedded(sim.needle(id)) && sim.needle(id).host?.shapeId === shapeId;
 
+/** no world wall / blocking prop between two points */
+export function clearWorldLine(sim: Sim, a: Vec, b: Vec): boolean {
+  const hit = raycast(sim.bodies, a, b, (bd, s) => bd.kind === 'world' && s.blocksNeedle);
+  return !hit;
+}
+
 export interface PlaceTarget {
   shape?: string;
   point?: Vec;
@@ -175,11 +181,31 @@ export class Placer {
       else f.recall = true;
       return false;
     }
-    const target = t.shape ? shapePos(sim, t.shape) : t.point!;
+    let target = t.shape ? shapePos(sim, t.shape) : t.point!;
     if (!target) return false;
     const me = sim.player.pos;
-    const ok = (from: Vec) => (t.shape ? clearShot(sim, from, target, t.shape) : clearPointShot(sim, from, target, t.tol ?? 14));
-    this.aim = target;
+    // moving targets (rafts, arms, boss parts): lead the shot by the needle flight time
+    let moving = false;
+    if (t.shape) {
+      const hostBody = findShape(sim.bodies, t.shape)?.body;
+      if (hostBody) {
+        const vx = (hostBody.pos.x - hostBody.prevPos.x) * 60;
+        const vy = (hostBody.pos.y - hostBody.prevPos.y) * 60;
+        if (Math.hypot(vx, vy) > 6) {
+          moving = true;
+          const tf = Math.hypot(target.x - me.x, target.y - me.y) / sim.mods.needleSpeed;
+          target = { x: target.x + vx * tf, y: target.y + vy * tf };
+        }
+      }
+    }
+    const tgt = target;
+    const ok = (from: Vec) =>
+      moving
+        ? clearWorldLine(sim, from, tgt) && Math.hypot(tgt.x - from.x, tgt.y - from.y) < 220
+        : t.shape
+          ? clearShot(sim, from, tgt, t.shape)
+          : clearPointShot(sim, from, tgt, t.tol ?? 14);
+    this.aim = tgt;
     if (ok(me) && this.cooldown <= 0) {
       if (sim.player.selected !== NIDX[id]) {
         f.selIndex = NIDX[id];
@@ -215,6 +241,19 @@ export class Placer {
 
 /** Standard survival layer: dash through rings, sidestep zones/lanes. Mutates the frame. */
 export function survive(sim: Sim, f: InputFrame): void {
+  // travelling wave fronts: dash through them toward their origin
+  const me0 = sim.player.pos;
+  for (const a of sim.attacks) {
+    if (a.kind !== 'front' || !a.harmful) continue;
+    if (a.phase === 'active' && a.shape?.kind === 'capsule') {
+      const y = a.shape.a.y;
+      if (me0.x >= a.shape.a.x - 8 && me0.x <= a.shape.b.x + 8 && me0.y > y - 6 && me0.y - y < 26) {
+        f.move = { x: 0, y: -1 };
+        if (sim.player.dash.cd <= 0 && me0.y - y < 16) f.dash = true;
+        return;
+      }
+    }
+  }
   const esc = danger(sim);
   if (!esc) {
     // do not walk into a live lane / zone: probe the intended step

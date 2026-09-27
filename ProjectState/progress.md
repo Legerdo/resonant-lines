@@ -1,37 +1,31 @@
 # 공명선: 봉인된 심장 — progress
 
-현재 Stage/Gate: Stage 1 (Resonance core) — core sim + 20 unit tests PASS. Next: Stage 0 browser boot + presentation.
+현재 Stage/Gate: Stage 4 (Full boss set) 진행 중 — B01~B06 구현(시뮬+아트+뷰+봇). 다음: B07, B08, FINAL, 엔딩, E2E, RC 검증.
 
 ## 핵심 설계 결정 (compaction 후 참고)
-- Stack: TypeScript 7.0.2 strict (erasableSyntaxOnly, .ts import 확장자), Phaser 4.2.1 (렌더링/씬/텍스처/카메라만), Vite 8, Vitest 5, Playwright 1.63 (chromium).
-- Sim: `src/core/sim/sim.ts` 1 Sim = 1 area/arena 시도. 재도전 = 새 Sim (잔존 상태 0). 60Hz fixed step (`FixedStepClock`).
-- 입력: `InputFrame` (move, aim(world), fire, recall, recallAll, selNext/Prev, selIndex, pulse, dash). Esc/pause 는 앱 계층.
-- Needle: 항상 A/B/C 3객체. 상태 Held/Flying/EmbeddedWorld/EmbeddedBoss/Disabled/Returning. swept raycast (이동 body는 prev→cur 상대운동).
-  - LMB: 선택 침이 Held면 발사, 아니면 다음 Held. 발사 후 선택은 다음 Held로 이동. RMB: 선택 침(밖)이면 회수, 선택이 Held면 커서에 가장 가까운 밖의 침 회수. R: 전체 회수.
-  - NonAnchorable 충돌 → Disabled(0.8s) → Returning. 최대 비행 300px → Returning.
-- Link: 두 침 embedded + 거리 10..180 + LOS(blocksLink) + Broken 아님. 무효화 시 charge 소실.
-  - capture: 공격 shape(circle/ring(arc)/capsule) vs link 세그먼트 4-substep. 공격 id별 1회(provenance). continuous(Heat)는 progress 0.35s.
-  - Charged 동일 sig+tone 재포획 → Overloaded(3s 후 Broken), 다른 sig → 교체. Overloaded에 추가 포획 → Broken.
-- Pulse(E): **커서에 가장 가까운 (충전된 선을 가진) embedded 침 = 목표**. 그 침에 닿은 충전 선 전부가 목표 쪽으로 흐름(A→B 는 B의 host에 전달). 속도 720px/s, startup 0.1s, cd 0.45s. 전달 = `boss.onPulseDelivered` → `logic.onPulseDelivered`. 경로 hit = `onPulsePath`.
-- Lattice: 3선 valid + 면적 ≥ 300.
-- Shield: 2→1→0(Core)→Dead. lethal 공격 즉사. 피격 후 0.65s 무적, dash 첫 0.1s 무적. 성공 Pulse 2회(피해 상태에서) → Shield +1, 전투당 1회.
-- Tie: `resolveDecisive` — victory t < lethal t - eps → 승리, 아니면 사망.
-- Seal: `sim.breakSeal(id, eventKey)` idempotent. 필수 seal 전부 → coreExposed. `sim.requestVictory(t,pos)`.
-- Art: palette-indexed sources `art/source/*.ts` → `npm run art` → `public/assets/**.png` + manifest.json. 미리보기 `art/preview/*@4x.png`.
-  - `sculpt()` = 손으로 그린 region mask + 방향광 ramp 양자화 + orphan 정리. `outline()` = sel-out 1px.
-- Tunings (보스별 1개 해금, 최대 2개 장착): longLine, swiftNeedle, elasticNeedle, stableNet, echo, rapidTune, wideCapture, threadWeaver.
+- Stack: TypeScript 7.0.2 strict (erasableSyntaxOnly → parameter property/enum 금지, .ts import 확장자), Phaser 4.2.1 (렌더/씬/텍스처/카메라), Vite 8, Vitest 5, Playwright 1.63.
+- Sim: `src/core/sim/sim.ts` 1 Sim = 1 area/arena 시도. 재도전 = 새 Sim. 60Hz fixed step.
+- Pulse(E): 커서에 가장 가까운 (충전 선이 있는) embedded 침 = 목표, 연결된 충전 선 전부가 목표로 흐름. `sim.flowInverted`/`sim.invertedLinks` 로 역류 방향 반전(B05 썰물, FINAL Phase B).
+- Boss 인터페이스 `src/bosses/framework/boss.ts`: setup/update/onPulseDelivered/onAttackLink/onNeedleHit/canRecall/updateDefeated/view.
+- 등록 위치: `src/bosses/registry.ts` (factories), `src/world/areas/arenas.ts` (ARENA_Bxx 자동 등록), `src/presentation/bosses/*View.ts` + `all.ts`, `art/source/boss*.ts` + `art/source/index.ts`, `src/debug/bots/*Bot.ts` + `bots/index.ts`.
+- 봇: 입력 프레임만 생성 (A16 fixture). `botKit.ts`: Placer(선택/회수/발사/리드샷), survive(회피), threat().
+- 헤드리스 봇 디버그: `node tests/scratch.ts B0x [invuln]`, 이벤트 추적 `node tests/scratch2.ts`.
+- Art: `npm run art` → public/assets + manifest. 미리보기 `art/preview/*@4x.png`. `sculpt()` mask 셰이딩 + accents.
 
-## 완료 기능
-- core math/geometry/rng/clock, Sim tick, player move/dash/guard, needle, link/lattice/thread step, capture, pulse, attacks(ring/zone/projectile/beam/custom)
+## 보스 요약
+- B01 그람(quarry): 돌진 Impact 포획 → 봉인석 면 방향 (N남/W동/E북에서 들어와야) → 코어 소켓 + 격자 pin → 코어로 역류.
+- B02 허밍(belfry): 음높이 0/1/2 Wave 링 → 같은 음 종에 전달, 틀린 종 = 불협(이중 링) → 추(TemporaryAnchor, 1.8/3s 발광) + 화음(tone3) 전달.
+- B03 네라(marsh): 4 분신, 진짜만 굴절/부착. A Heat, B 등 뒤에서(dot(dir,facing)>0.3), C Overloaded Heat → 수영하는 본체를 격자 내부에 가두고 Heat.
+- B04 모라(garden): 도관 c0(bridge+slam, a쪽으로) → c3(뿌리끝 MovingAnchor에서) → c1(fork-in 2선 동시) → 심장 ← 전원 도관 a단자 자동충전.
+- B05 역조의 눈(marsh): 떠다니는 뗏목, 평면 파면은 선이 평행(24°)일 때만 포획, 8초마다 조류 반전(흐름 반전). 윗눈꺼풀 Wave(뗏목발), 아랫눈꺼풀 Impact 물줄기(뗏목발), 누관 Overloaded Wave, 동공 = 동공+뗏목2 격자 + Wave.
+- B06 브락(quarry): 박힌 침을 삼킴(내부 endpoint, 회수 불가). A 지하에서 Impact, B 분사 Heat가 선을 따라(22°), C 지상 노출 중 Impact → 드릴 코어 + 기둥2 격자, 세 선 모두 충전 후 코어로.
 
 ## AutoVerified
-- tests/resonance.test.ts: A01~A15 framework-level (20 tests)
-
-## RuntimeVerified / VisualVerified
-- (none yet)
+- tests/resonance.test.ts: A01~A15 framework-level
+- tests/bosses.test.ts: A16 (B01~B06 clear with zero tunings, input-only bots), A15 per boss, B01 rules
 
 ## 변경한 TUNABLE
-- (기본값 그대로)
+- dashIFrames 0.10 → 0.12 (링 대시 통과 여유)
 
 ## 재현 명령
 - npm run art / npm run typecheck / npm run test / npm run build / npm run test:e2e / npm run verify

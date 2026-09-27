@@ -8,10 +8,12 @@ import { gramSheets } from './bossGram.ts';
 import { humSheets } from './bossHum.ts';
 import { neraSheets } from './bossNera.ts';
 import { moraSheets } from './bossMora.ts';
+import { eyeSheets } from './bossEye.ts';
+import { brakSheets } from './bossBrak.ts';
 
 export function allSheets(): SheetDef[] {
   return [
     ...uiSheets(), ...playerSheets(), ...fxSheets(), ...tileSheets(), ...propSheets(),
-    ...gramSheets(), ...humSheets(), ...neraSheets(), ...moraSheets(),
+    ...gramSheets(), ...humSheets(), ...neraSheets(), ...moraSheets(), ...eyeSheets(), ...brakSheets(),
   ];
 }

@@ -11,6 +11,9 @@ import { isEmbedded } from './needle.ts';
 
 export const isCharged = (l: Link): boolean => l.valid && (l.state === 'Charged' || l.state === 'Overloaded');
 
+/** XOR of the global reverse-tide flag and per-link anti-phase */
+export const flowInvertedFor = (sim: Sim, l: Link): boolean => sim.flowInverted !== sim.invertedLinks.has(l.id);
+
 export interface PulsePlan {
   target: Needle;
   links: Link[];
@@ -46,31 +49,35 @@ export function releasePulse(sim: Sim): void {
   }
   const group = sim.nextId();
   for (const l of plan.links) {
-    const fromId = l.a === plan.target.id ? l.b : l.a;
+    const other = l.a === plan.target.id ? l.b : l.a;
+    const inverted = flowInvertedFor(sim, l);
+    const fromId = inverted ? plan.target.id : other;
+    const toId = inverted ? other : plan.target.id;
     const from = sim.needle(fromId);
+    const toN = sim.needle(toId);
     const q: Pulse = {
       id: sim.nextId(),
       group,
       linkId: l.id,
       from: fromId,
-      to: plan.target.id,
+      to: toId,
       sig: l.sig!,
       tone: l.tone,
       power: l.power,
       d: 0,
       prevD: 0,
-      length: dist(from.pos, plan.target.pos),
+      length: dist(from.pos, toN.pos),
       speed: sim.mods.pulseSpeed,
       width: sim.mods.pulseWidth,
       done: false,
       pathHits: [],
-      dir: norm(sub(plan.target.pos, from.pos)),
+      dir: norm(sub(toN.pos, from.pos)),
       linger: sim.mods.echo,
       delivered: false,
     };
     sim.pulses.push(q);
-    sim.record(`pulse ${fromId}->${plan.target.id} ${q.sig}${q.tone >= 0 ? q.tone : ''} p${q.power}`);
-    sim.emit({ type: 'pulseFired', link: l.id, needle: plan.target.id, sig: q.sig, value: q.power, pos: copy(from.pos), dir: copy(q.dir) });
+    sim.record(`pulse ${fromId}->${toId} ${q.sig}${q.tone >= 0 ? q.tone : ''} p${q.power}${inverted ? ' inv' : ''}`);
+    sim.emit({ type: 'pulseFired', link: l.id, needle: toId, sig: q.sig, value: q.power, pos: copy(from.pos), dir: copy(q.dir) });
     // discharge
     l.state = 'Idle';
     l.sig = null;

@@ -5,6 +5,8 @@ import { GramBoss } from './definitions/b01Gram.ts';
 import { HummingBoss } from './definitions/b02Humming.ts';
 import { NeraBoss } from './definitions/b03Nera.ts';
 import { MoraBoss } from './definitions/b04Mora.ts';
+import { EyeBoss } from './definitions/b05Eye.ts';
+import { BrakBoss } from './definitions/b06Brak.ts';
 
 export interface BossEntry {
   id: string;
@@ -21,6 +23,8 @@ const factories: Record<string, () => BossController> = {
   B02: () => new HummingBoss(),
   B03: () => new NeraBoss(),
   B04: () => new MoraBoss(),
+  B05: () => new EyeBoss(),
+  B06: () => new BrakBoss(),
 };
 
 export function registerBoss(id: string, f: () => BossController): void {

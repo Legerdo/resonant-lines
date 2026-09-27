@@ -4,7 +4,7 @@ import { P, SIG_COLORS } from './art/palette.ts';
 import type { PixelLayer } from './pixelLayer.ts';
 import type { Sim } from '../core/sim/sim.ts';
 import type { Link, Signature } from '../core/sim/types.ts';
-import { planPulse } from '../resonance/pulse.ts';
+import { planPulse, flowInvertedFor } from '../resonance/pulse.ts';
 import { isEmbedded } from '../resonance/needle.ts';
 
 export interface LinkDrawOptions {
@@ -191,10 +191,12 @@ export function drawPulsePreview(layer: PixelLayer, sim: Sim, o: LinkDrawOptions
     layer.px(t.x + sx * r, t.y + sy * (r - 1), c);
   }
   for (const l of plan.links) {
-    const fromId = l.a === plan.target.id ? l.b : l.a;
-    const f = sim.needle(fromId).pos;
-    const dx = t.x - f.x;
-    const dy = t.y - f.y;
+    const otherId = l.a === plan.target.id ? l.b : l.a;
+    const inv = flowInvertedFor(sim, l);
+    const f = inv ? plan.target.pos : sim.needle(otherId).pos;
+    const tt = inv ? sim.needle(otherId).pos : plan.target.pos;
+    const dx = tt.x - f.x;
+    const dy = tt.y - f.y;
     const len = Math.hypot(dx, dy);
     if (len < 20) continue;
     const ux = dx / len;

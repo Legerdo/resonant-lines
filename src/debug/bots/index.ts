@@ -5,6 +5,8 @@ import { GramBot } from './gramBot.ts';
 import { HumBot } from './humBot.ts';
 import { NeraBot } from './neraBot.ts';
 import { MoraBot } from './moraBot.ts';
+import { EyeBot } from './eyeBot.ts';
+import { BrakBot } from './brakBot.ts';
 
 export interface AnyBot {
   name: string;
@@ -19,6 +21,8 @@ export const BOTS: Record<string, () => AnyBot> = {
   B02: () => new HumBot(),
   B03: () => new NeraBot(),
   B04: () => new MoraBot(),
+  B05: () => new EyeBot(),
+  B06: () => new BrakBot(),
 };
 
 export function registerBot(name: string, f: () => AnyBot): void {

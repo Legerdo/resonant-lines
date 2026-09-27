@@ -72,6 +72,10 @@ export class Sim {
   pendingVictory: { t: number; pos: Vec } | null = null;
   pendingPulse = false;
   stableNetUsed = false;
+  /** reverse tide / anti-phase: energy flows OUT of the aimed needle instead of into it (set by bosses) */
+  flowInverted = false;
+  /** per-link inversion (final boss Phase B): links listed here flow opposite to the aim rule */
+  invertedLinks = new Set<string>();
   private nextIdValue = 1;
   private committedEvents = new Set<string>();
 
