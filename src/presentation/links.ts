@@ -119,6 +119,21 @@ export function drawLinks(layer: PixelLayer, sim: Sim, o: LinkDrawOptions): void
       }
       continue;
     }
+    if (flowInvertedFor(sim, l)) {
+      // anti-phase / reversed tide: zigzag shape + particles travelling b->a (the reversed direction)
+      const pts = layer.linePoints(x0, y0, x1, y1);
+      const [px, py] = Math.abs(x1 - x0) >= Math.abs(y1 - y0) ? [0, 1] : [1, 0];
+      pts.forEach(([x, y], i) => {
+        if (i % 6 === 0) layer.px(x + px * 2, y + py * 2, P.voidL);
+        if (i % 6 === 3) layer.px(x - px * 2, y - py * 2, P.voidL);
+      });
+      const n = pts.length;
+      for (let k = 0; k < 3; k++) {
+        const idx = n - 1 - ((Math.floor(o.time * 50) + k * Math.floor(n / 3)) % Math.max(1, n));
+        const p = pts[Math.max(0, Math.min(n - 1, idx))];
+        if (p) layer.px(p[0], p[1] - 1, P.bone);
+      }
+    }
     if (l.state === 'Charged' || l.state === 'Overloaded') {
       drawSignatureLine(layer, x0, y0, x1, y1, l.sig!, l.tone, l.state === 'Overloaded', o);
       if (l.state === 'Overloaded' && o.frame % 6 === 0) {

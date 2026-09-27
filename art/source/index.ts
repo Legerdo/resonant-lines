@@ -10,10 +10,13 @@ import { neraSheets } from './bossNera.ts';
 import { moraSheets } from './bossMora.ts';
 import { eyeSheets } from './bossEye.ts';
 import { brakSheets } from './bossBrak.ts';
+import { orbitSheets } from './bossOrbit.ts';
+import { crownSheets } from './bossCrown.ts';
+import { starSheets } from './bossStar.ts';
 
 export function allSheets(): SheetDef[] {
   return [
     ...uiSheets(), ...playerSheets(), ...fxSheets(), ...tileSheets(), ...propSheets(),
-    ...gramSheets(), ...humSheets(), ...neraSheets(), ...moraSheets(), ...eyeSheets(), ...brakSheets(),
+    ...gramSheets(), ...humSheets(), ...neraSheets(), ...moraSheets(), ...eyeSheets(), ...brakSheets(), ...orbitSheets(), ...crownSheets(), ...starSheets(),
   ];
 }

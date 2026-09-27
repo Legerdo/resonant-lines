@@ -7,6 +7,9 @@ import { NeraBoss } from './definitions/b03Nera.ts';
 import { MoraBoss } from './definitions/b04Mora.ts';
 import { EyeBoss } from './definitions/b05Eye.ts';
 import { BrakBoss } from './definitions/b06Brak.ts';
+import { OrbitBoss } from './definitions/b07Orbit.ts';
+import { CrownBoss } from './definitions/b08Crown.ts';
+import { StarBoss } from './definitions/finalStar.ts';
 
 export interface BossEntry {
   id: string;
@@ -25,6 +28,9 @@ const factories: Record<string, () => BossController> = {
   B04: () => new MoraBoss(),
   B05: () => new EyeBoss(),
   B06: () => new BrakBoss(),
+  B07: () => new OrbitBoss(),
+  B08: () => new CrownBoss(),
+  FINAL: () => new StarBoss(),
 };
 
 export function registerBoss(id: string, f: () => BossController): void {
