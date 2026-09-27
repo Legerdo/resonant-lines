@@ -11,7 +11,15 @@ const sim = new Sim({ area: areaById(e.areaId)!, seed: 0x5eed + id.charCodeAt(1)
 const bot = BOTS[id]!();
 let i = 0;
 for (; i < 60 * 300; i++) {
-  sim.step(bot.next(sim));
+  const f = bot.next(sim);
+  const ev = sim.step(f);
+  for (const e of ev) {
+    if (e.type === 'playerHit') {
+      const p = sim.player;
+      const at = sim.attacks.filter((a) => a.hitPlayer).map((a) => `${a.kind}/${a.owner} ph=${a.phase} t=${a.t.toFixed(2)} ${JSON.stringify(a.shape)}`);
+      console.log(`HIT @${sim.tick} p=(${p.pos.x.toFixed(0)},${p.pos.y.toFixed(0)}) dash=${p.dash.active} move=(${f.move.x.toFixed(2)},${f.move.y.toFixed(2)}) ${at.join(' ; ')}`);
+    }
+  }
   const r = sim.fight?.result;
   if (r === 'victory' || r === 'defeat') break;
 }

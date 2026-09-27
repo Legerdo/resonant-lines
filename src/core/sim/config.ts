@@ -7,7 +7,7 @@ export const CFG = {
     dashSpeed: 245,
     dashDuration: 0.2,
     dashCooldown: 0.42,
-    dashIFrames: 0.1,
+    dashIFrames: 0.12,
     hitInvuln: 0.65,
     fireCooldown: 0.12,
     handOffset: 6,

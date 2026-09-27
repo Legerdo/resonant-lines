@@ -2,6 +2,9 @@
 import type { BossController } from './framework/boss.ts';
 import type { TuningId } from '../progression/tunings.ts';
 import { GramBoss } from './definitions/b01Gram.ts';
+import { HummingBoss } from './definitions/b02Humming.ts';
+import { NeraBoss } from './definitions/b03Nera.ts';
+import { MoraBoss } from './definitions/b04Mora.ts';
 
 export interface BossEntry {
   id: string;
@@ -15,6 +18,9 @@ export interface BossEntry {
 
 const factories: Record<string, () => BossController> = {
   B01: () => new GramBoss(),
+  B02: () => new HummingBoss(),
+  B03: () => new NeraBoss(),
+  B04: () => new MoraBoss(),
 };
 
 export function registerBoss(id: string, f: () => BossController): void {

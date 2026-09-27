@@ -1,5 +1,135 @@
 import type { AreaDef } from '../areaTypes.ts';
 
+// B04 뿌리기계 모라 — overgrown machine court. Four broken conduits (terminal pairs), Mora rooted at the north wall.
+const conduitProps = (): AreaDef['props'] => {
+  const T: [string, number, number][] = [
+    ['c0a', 64, 112], ['c0b', 64, 184], ['c1a', 176, 236], ['c1b', 112, 236],
+    ['c2a', 240, 236], ['c2b', 304, 236], ['c3a', 352, 112], ['c3b', 352, 184],
+  ];
+  return T.map(([id, x, y]) => ({ id, kind: 'terminal', pos: { x, y }, r: 5, tag: 'Anchorable' as const, variant: id.endsWith('a') ? 0 : 1 }));
+};
+export const ARENA_B04: AreaDef = {
+  id: 'arena_B04',
+  kind: 'arena',
+  region: 'garden',
+  nameKey: 'boss.B04',
+  bossId: 'B04',
+  music: 'boss_mora',
+  tiles: [
+    '##########################',
+    '##########################',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    'A..,,................,,..A',
+    '#..,,................,,..#',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    '#,,......................#',
+    '#,,,....................,#',
+    '#........................#',
+    '#........................#',
+    '#####AAAA########AAAA#####',
+    '##########################',
+  ],
+  spawns: { default: { x: 208, y: 214 } },
+  props: [
+    ...conduitProps(),
+    { id: 'treeW', kind: 'tree', pos: { x: 36, y: 60 }, r: 8 },
+    { id: 'treeE', kind: 'tree', pos: { x: 380, y: 60 }, r: 8 },
+    { id: 'fl1', kind: 'flowers', pos: { x: 200, y: 160 } },
+    { id: 'vn1', kind: 'vines', pos: { x: 120, y: 60 } },
+    { id: 'vn2', kind: 'vines', pos: { x: 300, y: 60 } },
+  ],
+  exits: [],
+  interactables: [],
+};
+
+// B03 거울비늘 네라 — mirror pool. Mud banks (','), four glass posts in the water, reed walls with anchor stones.
+export const ARENA_B03: AreaDef = {
+  id: 'arena_B03',
+  kind: 'arena',
+  region: 'marsh',
+  nameKey: 'boss.B03',
+  bossId: 'B03',
+  music: 'boss_nera',
+  tiles: [
+    '##########################',
+    '######AAAA######AAAA######',
+    '#,,,....................,#',
+    '#,......................,#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    'A..........,,,...........A',
+    '#.........,,,,,..........#',
+    '#..........,,,...........#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    '#........................#',
+    '#,......................,#',
+    '#,,,,..............,,,,,,#',
+    '#######AAAA####AAAA#######',
+    '##########################',
+  ],
+  spawns: { default: { x: 110, y: 236 } },
+  props: [
+    { id: 'postW', kind: 'mirrorPost', pos: { x: 140, y: 150 }, r: 6, tag: 'Anchorable' },
+    { id: 'postE', kind: 'mirrorPost', pos: { x: 276, y: 150 }, r: 6, tag: 'Anchorable' },
+    { id: 'postS', kind: 'mirrorPost', pos: { x: 208, y: 238 }, r: 6, tag: 'Anchorable' },
+    { id: 'postN', kind: 'mirrorPost', pos: { x: 208, y: 44 }, r: 6, tag: 'Anchorable' },
+    { id: 'reedA', kind: 'reeds', pos: { x: 40, y: 250 } },
+    { id: 'reedB', kind: 'reeds', pos: { x: 372, y: 44 } },
+    { id: 'reedC', kind: 'reeds', pos: { x: 380, y: 250 } },
+  ],
+  exits: [],
+  interactables: [],
+};
+
+// B02 종루의 허밍 — belfry floor. Octagonal hall, eight anchor panels, three tuned bells (big=low, mid, small=high).
+export const ARENA_B02: AreaDef = {
+  id: 'arena_B02',
+  kind: 'arena',
+  region: 'belfry',
+  nameKey: 'boss.B02',
+  bossId: 'B02',
+  music: 'boss_hum',
+  tiles: [
+    '##########################',
+    '#####AAAA########AAAA#####',
+    '###....................###',
+    '##......................##',
+    '#........................#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    'A........................A',
+    '#........................#',
+    '#........................#',
+    '#........................#',
+    'A........................A',
+    'A........................A',
+    '##......................##',
+    '###....................###',
+    '#####AAAA########AAAA#####',
+    '##########################',
+  ],
+  spawns: { default: { x: 208, y: 214 } },
+  props: [
+    { id: 'bell0', kind: 'bell', pos: { x: 98, y: 88 }, r: 10, tag: 'Anchorable', receiver: 'bell0', variant: 0 },
+    { id: 'bell1', kind: 'bell', pos: { x: 318, y: 88 }, r: 8, tag: 'Anchorable', receiver: 'bell1', variant: 1 },
+    { id: 'bell2', kind: 'bell', pos: { x: 208, y: 250 }, r: 6, tag: 'Anchorable', receiver: 'bell2', variant: 2 },
+    { id: 'beam1', kind: 'crackedBeam', pos: { x: 60, y: 40 } },
+    { id: 'beam2', kind: 'crackedBeam', pos: { x: 356, y: 40 } },
+  ],
+  exits: [],
+  interactables: [],
+};
+
 // B01 벽쇄자 그람 — quarry pit. Four anchor slabs (N/S/W/E) + three seal monoliths with carved faces.
 export const ARENA_B01: AreaDef = {
   id: 'arena_B01',

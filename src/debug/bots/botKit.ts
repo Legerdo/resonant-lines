@@ -6,8 +6,19 @@ import { raycast, worldCircle, findShape } from '../../core/sim/bodies.ts';
 import { pointSegDist2 } from '../../core/geometry/geom.ts';
 import { isEmbedded } from '../../resonance/needle.ts';
 import { resolveCircle } from '../../core/sim/bodies.ts';
+import { TILE, isSolidTile } from '../../world/areaTypes.ts';
 
 export const NIDX: Record<NeedleId, number> = { A: 0, B: 1, C: 2 };
+
+/** is a point inside solid tiles or too close to them (player radius) */
+export function blockedAt(sim: Sim, p: Vec, r = 6): boolean {
+  for (const [dx, dy] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) {
+    const cx = Math.floor((p.x + dx) / TILE);
+    const cy = Math.floor((p.y + dy) / TILE);
+    if (isSolidTile(sim.area.tiles[cy]?.[cx])) return true;
+  }
+  return false;
+}
 
 export function shapePos(sim: Sim, shapeId: string): Vec | null {
   const f = findShape(sim.bodies, shapeId);
@@ -63,11 +74,17 @@ export function steerTo(sim: Sim, f: InputFrame, target: Vec, tol = 3): boolean 
 
 /** Danger from telegraphed / active attacks at the player position: returns a unit escape direction or null. */
 export function danger(sim: Sim, pos: Vec = sim.player.pos, margin = 10): Vec | null {
+  return threat(sim, pos, margin)?.esc ?? null;
+}
+
+export function threat(sim: Sim, pos: Vec, margin = 10): { esc: Vec; urgent: boolean } | null {
   let esc: Vec | null = null;
+  let urgent = false;
   for (const a of sim.attacks) {
     if (!a.harmful) continue;
     const s = a.phase === 'active' ? a.shape : a.phase === 'telegraph' ? a.tele : null;
     if (!s) continue;
+    const before: Vec | null = esc;
     if (s.kind === 'circle') {
       const r = (a.phase === 'telegraph' ? (a.p.r ?? s.r) : s.r) + margin;
       const dx = pos.x - s.c.x;
@@ -80,7 +97,7 @@ export function danger(sim: Sim, pos: Vec = sim.player.pos, margin = 10): Vec | 
         const vx = s.b.x - s.a.x;
         const vy = s.b.y - s.a.y;
         const l = Math.hypot(vx, vy) || 1;
-        // perpendicular away from the lane
+        // perpendicular away from the lane, unless a wall is right there (then the other side)
         let nx = -vy / l;
         let ny = vx / l;
         const side = (pos.x - s.a.x) * nx + (pos.y - s.a.y) * ny;
@@ -88,14 +105,25 @@ export function danger(sim: Sim, pos: Vec = sim.player.pos, margin = 10): Vec | 
           nx = -nx;
           ny = -ny;
         }
+        if (blockedAt(sim, { x: pos.x + nx * 24, y: pos.y + ny * 24 }) || blockedAt(sim, { x: pos.x + nx * 12, y: pos.y + ny * 12 })) {
+          nx = -nx;
+          ny = -ny;
+        }
         esc = { x: nx, y: ny };
       }
     } else if (s.kind === 'ring' && a.phase === 'active') {
       const d = Math.hypot(pos.x - s.c.x, pos.y - s.c.y);
-      if (d > s.rIn - margin - 14 && d < s.rOut + 4) esc = { x: 0, y: 0 }; // ring about to pass: dash through
+      let inArc = true;
+      if (s.arcAng !== undefined) {
+        const ang = Math.atan2(pos.y - s.c.y, pos.x - s.c.x);
+        const da = Math.abs(Math.atan2(Math.sin(ang - s.arcAng), Math.cos(ang - s.arcAng)));
+        inArc = da <= (s.arcHalf ?? Math.PI) + 0.25;
+      }
+      if (inArc && d > s.rIn - 8 && d < s.rOut + 22) esc = { x: 0, y: 0 }; // ring about to pass: dash through
     }
+    if (esc !== before && (a.phase === 'active' || a.p.lock === 1)) urgent = true;
   }
-  return esc;
+  return esc ? { esc, urgent } : null;
 }
 
 export function frame(sim: Sim, aim: Vec): InputFrame {
@@ -103,6 +131,139 @@ export function frame(sim: Sim, aim: Vec): InputFrame {
 }
 
 export const embeddedIn = (sim: Sim, id: NeedleId, shapeId: string): boolean => isEmbedded(sim.needle(id)) && sim.needle(id).host?.shapeId === shapeId;
+
+export interface PlaceTarget {
+  shape?: string;
+  point?: Vec;
+  tol?: number;
+}
+
+/** Would a needle thrown from `from` at `p` embed on an anchorable surface within `tol` of `p`? */
+export function clearPointShot(sim: Sim, from: Vec, p: Vec, tol: number, reach = 290): boolean {
+  const dx = p.x - from.x;
+  const dy = p.y - from.y;
+  const d = Math.hypot(dx, dy);
+  if (d > reach || d < 4) return false;
+  const end = { x: from.x + (dx / d) * (d + 24), y: from.y + (dy / d) * (d + 24) };
+  const hit = raycast(sim.bodies, from, end, (_b, s) => s.blocksNeedle);
+  if (!hit || hit.shape.tag === 'NonAnchorable' || !hit.shape.enabled) return false;
+  return Math.hypot(hit.point.x - p.x, hit.point.y - p.y) <= tol;
+}
+
+/** Reusable needle placement routine (recall if misplaced, find a clear spot, fire). */
+export class Placer {
+  aim: Vec = { x: 0, y: 0 };
+  private spot: Vec | null = null;
+  private spotFor = '';
+  cooldown = 0;
+
+  satisfied(sim: Sim, id: NeedleId, t: PlaceTarget): boolean {
+    const n = sim.needle(id);
+    if (!isEmbedded(n)) return false;
+    if (t.shape) return n.host?.shapeId === t.shape;
+    if (t.point) return Math.hypot(n.pos.x - t.point.x, n.pos.y - t.point.y) <= (t.tol ?? 14);
+    return true;
+  }
+
+  place(sim: Sim, f: InputFrame, id: NeedleId, t: PlaceTarget, avoid: Vec[] = []): boolean {
+    this.cooldown--;
+    const n = sim.needle(id);
+    if (this.satisfied(sim, id, t)) return true;
+    if (n.state === 'Flying' || n.state === 'Returning') return false;
+    if (n.state !== 'Held') {
+      if (sim.player.selected !== NIDX[id]) f.selIndex = NIDX[id];
+      else f.recall = true;
+      return false;
+    }
+    const target = t.shape ? shapePos(sim, t.shape) : t.point!;
+    if (!target) return false;
+    const me = sim.player.pos;
+    const ok = (from: Vec) => (t.shape ? clearShot(sim, from, target, t.shape) : clearPointShot(sim, from, target, t.tol ?? 14));
+    this.aim = target;
+    if (ok(me) && this.cooldown <= 0) {
+      if (sim.player.selected !== NIDX[id]) {
+        f.selIndex = NIDX[id];
+        return false;
+      }
+      f.fire = true;
+      this.cooldown = 8;
+      this.spot = null;
+      return false;
+    }
+    const key = `${id}:${t.shape ?? `${target.x},${target.y}`}`;
+    if (!this.spot || this.spotFor !== key || !ok(this.spot)) {
+      this.spotFor = key;
+      this.spot = null;
+      for (let r = 30; r <= 200 && !this.spot; r += 16) {
+        for (let k = 0; k < 32; k++) {
+          const a = (k / 32) * Math.PI * 2;
+          const p = { x: target.x + Math.cos(a) * r, y: target.y + Math.sin(a) * r };
+          const q = resolveCircle(sim.bodies.filter((b) => b.kind === 'world'), p, 6, 3);
+          if (Math.hypot(q.x - p.x, q.y - p.y) > 0.5) continue;
+          if (avoid.some((v) => Math.hypot(v.x - p.x, v.y - p.y) < 36)) continue;
+          if (ok(p)) {
+            this.spot = p;
+            break;
+          }
+        }
+      }
+    }
+    if (this.spot) steerTo(sim, f, this.spot);
+    return false;
+  }
+}
+
+/** Standard survival layer: dash through rings, sidestep zones/lanes. Mutates the frame. */
+export function survive(sim: Sim, f: InputFrame): void {
+  const esc = danger(sim);
+  if (!esc) {
+    // do not walk into a live lane / zone: probe the intended step
+    const m = Math.hypot(f.move.x, f.move.y);
+    if (m > 0.05) {
+      const me = sim.player.pos;
+      const probe = { x: me.x + (f.move.x / m) * 8, y: me.y + (f.move.y / m) * 8 };
+      if (danger(sim, probe, 6)) f.move = { x: 0, y: 0 };
+    }
+    return;
+  }
+  if (esc.x === 0 && esc.y === 0) {
+    const me = sim.player.pos;
+    for (const a of sim.attacks) {
+      if (a.phase !== 'active' || !a.harmful || a.shape?.kind !== 'ring') continue;
+      const s = a.shape;
+      const d = Math.hypot(me.x - s.c.x, me.y - s.c.y);
+      if (s.arcAng !== undefined && d - s.rOut < 40) {
+        // cone: step out sideways, dash only when it is about to land
+        const px = -Math.sin(s.arcAng);
+        const py = Math.cos(s.arcAng);
+        const side = (me.x - s.c.x) * px + (me.y - s.c.y) * py >= 0 ? 1 : -1;
+        f.move = { x: px * side, y: py * side };
+        if (d - s.rOut < 10 && sim.player.dash.cd <= 0) f.dash = true;
+        return;
+      }
+      if (d - s.rOut < 12 && d > s.rIn - 4) {
+        // dash through toward the centre if there is room, otherwise sidestep along the front
+        const inx = (s.c.x - me.x) / (d || 1);
+        const iny = (s.c.y - me.y) / (d || 1);
+        const room = d - s.rIn > 0 && sim.bodies.every((b) => b.kind !== 'boss' || !b.enabled || Math.hypot(b.pos.x - (me.x + inx * 50), b.pos.y - (me.y + iny * 50)) > 26);
+        f.move = room ? { x: inx, y: iny } : { x: -iny, y: inx };
+        if (sim.player.dash.cd <= 0) f.dash = true;
+        return;
+      }
+    }
+    return;
+  }
+  f.move = esc;
+  const th = threat(sim, sim.player.pos);
+  if (th?.urgent) {
+    // never dash into another live threat
+    const me = sim.player.pos;
+    const land = { x: me.x + esc.x * 44, y: me.y + esc.y * 44 };
+    const mid = { x: me.x + esc.x * 22, y: me.y + esc.y * 22 };
+    const others = threat(sim, land, 4) ?? threat(sim, mid, 4);
+    if (!others || (others.esc.x === esc.x && others.esc.y === esc.y)) f.dash = true;
+  }
+}
 
 /** point on the far side of a segment from `from`, offset `off` px from the segment's closest point */
 export function lurePoint(a: Vec, b: Vec, from: Vec, off: number): Vec {

@@ -2,6 +2,7 @@
 import { P } from './art/palette.ts';
 import { ySort, type ViewCtx } from './bosses/types.ts';
 import { worldCircle } from '../core/sim/bodies.ts';
+import { BOSS_DRAWN_KINDS } from './bosses/all.ts';
 
 const ANIMATED: Record<string, number> = { lamp: 4 };
 
@@ -28,6 +29,7 @@ export function drawProps(ctx: ViewCtx): void {
   for (const p of sim.area.props) {
     if (p.ifFlag && !sim.flags.has(p.ifFlag)) continue;
     if (p.unlessFlag && sim.flags.has(p.unlessFlag)) continue;
+    if (BOSS_DRAWN_KINDS.has(p.kind)) continue;
     let state: string | undefined = bossProps[p.id];
     const lv = logicView[p.id];
     if (state === undefined && lv !== undefined) state = lv >= 1 ? 'on' : 'off';
